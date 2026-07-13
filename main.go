@@ -1,9 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
-	"sync"
+	"time"
+
+	_ "modernc.org/sqlite"
 )
 
 type User struct {
@@ -11,16 +15,13 @@ type User struct {
 	Name string `json:"name"`
 }
 
-var (
-	users = map[string]User{}
-	mu    sync.Mutex
-)
+var db *sql.DB
 
 func getUser(w http.ResponseWriter, r *http.Request) {
-	mu.Lock()
-	u, ok := users[r.PathValue("id")]
-	mu.Unlock()
-	if !ok {
+	var u User
+	err := db.QueryRow("SELECT id, name FROM users WHERE id = ?", r.PathValue("id")).
+		Scan(&u.ID, &u.Name)
+	if err == sql.ErrNoRows {
 		http.Error(w, "user not found", http.StatusNotFound)
 		return
 	}
@@ -34,24 +35,30 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
-	mu.Lock()
-	users[u.ID] = u
-	mu.Unlock()
+	_, err := db.Exec("INSERT INTO users (id, name) VALUES (?, ?)", u.ID, u.Name)
+	if err != nil {
+		http.Error(w, "could not create user", http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(u)
 }
 
-func deleteUser(w http.ResponseWriter, r *http.Request) {
-	mu.Lock()
-	delete(users, r.PathValue("id"))
-	mu.Unlock()
-	w.WriteHeader(http.StatusNoContent)
-}
-
 func main() {
+	start := time.Now()
+
+	var err error
+	db, err = sql.Open("sqlite", "app.db")
+	if err != nil {
+		panic(err)
+	}
+	db.Exec(`CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT)`)
+	log.Printf("database ready in %s", time.Since(start))
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /users/{id}", getUser)
 	mux.HandleFunc("POST /users", createUser)
-	mux.HandleFunc("DELETE /users/{id}", deleteUser)
+
+	log.Printf("server starting on :8080 (total startup: %s)", time.Since(start))
 	http.ListenAndServe(":8080", mux)
 }
