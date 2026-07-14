@@ -32,12 +32,19 @@ func main() {
 	h := &handlers.Users{DB: db}
 	a := &handlers.Auth{DB: db}
 	mux := http.NewServeMux()
+
+	// public
 	mux.HandleFunc("POST /signup", a.Signup)
 	mux.HandleFunc("POST /login", a.Login)
-	mux.HandleFunc("GET /users", h.List)
-	mux.HandleFunc("GET /users/{id}", h.Get)
-	mux.HandleFunc("POST /users", h.Create)
-	mux.HandleFunc("PUT /users/{id}", h.Update)
+
+	// protected — wrap a sub-mux with Auth
+	users := http.NewServeMux()
+	users.HandleFunc("GET /users", h.List)
+	users.HandleFunc("GET /users/{id}", h.Get)
+	users.HandleFunc("POST /users", h.Create)
+	users.HandleFunc("PUT /users/{id}", h.Update)
+	mux.Handle("/users", middleware.Auth(db, users))
+	mux.Handle("/users/", middleware.Auth(db, users))
 
 	srv := &http.Server{
 		Addr:    ":" + port,

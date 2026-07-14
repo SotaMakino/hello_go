@@ -1,10 +1,40 @@
 package middleware
 
 import (
+	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 )
+
+func Auth(db *sql.DB, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("session")
+		if err != nil {
+			unauthorized(w)
+			return
+		}
+
+		var username string
+		var expires time.Time
+		err = db.QueryRow(
+			"SELECT username, expires_at FROM sessions WHERE token = ?",
+			cookie.Value).Scan(&username, &expires)
+		if err != nil || time.Now().After(expires) {
+			unauthorized(w)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func unauthorized(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnauthorized)
+	json.NewEncoder(w).Encode(map[string]string{"error": "authentication required"})
+}
 
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
