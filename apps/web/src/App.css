@@ -32,3 +32,15 @@ li {
 .error {
   color: #c0392b;
 }
+
+.auth form {
+  flex-direction: column;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #2563eb;
+  cursor: pointer;
+}

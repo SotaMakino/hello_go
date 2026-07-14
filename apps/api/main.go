@@ -30,7 +30,10 @@ func main() {
 	}
 
 	h := &handlers.Users{DB: db}
+	a := &handlers.Auth{DB: db}
 	mux := http.NewServeMux()
+	mux.HandleFunc("POST /signup", a.Signup)
+	mux.HandleFunc("POST /login", a.Login)
 	mux.HandleFunc("GET /users", h.List)
 	mux.HandleFunc("GET /users/{id}", h.Get)
 	mux.HandleFunc("POST /users", h.Create)

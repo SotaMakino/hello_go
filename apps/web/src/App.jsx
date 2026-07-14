@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import AuthForm from './AuthForm'
+import { getToken, logout } from './api/auth'
 import './App.css'
 
 const API = 'http://localhost:8080'
 
 function App() {
+  const [authed, setAuthed] = useState(() => Boolean(getToken()))
   const [users, setUsers] = useState([])
   const [id, setId] = useState('')
   const [name, setName] = useState('')
@@ -60,9 +63,27 @@ function App() {
     }
   }
 
+  if (!authed) {
+    return (
+      <main className="app">
+        <AuthForm onSuccess={() => setAuthed(true)} />
+      </main>
+    )
+  }
+
   return (
     <main className="app">
       <h1>Users</h1>
+      <button
+        type="button"
+        className="link"
+        onClick={() => {
+          logout()
+          setAuthed(false)
+        }}
+      >
+        Log out
+      </button>
 
       {error && <p className="error">{error}</p>}
 
