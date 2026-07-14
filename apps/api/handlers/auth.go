@@ -67,3 +67,16 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	})
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (a *Auth) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session")
+	if err == nil {
+		a.DB.Exec("DELETE FROM sessions WHERE token = ?", cookie.Value) // kill server side
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name: "session", Value: "", Path: "/",
+		HttpOnly: true, SameSite: http.SameSiteLaxMode,
+		MaxAge: -1, // tells the browser: delete this cookie
+	})
+	w.WriteHeader(http.StatusNoContent)
+}

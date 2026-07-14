@@ -36,6 +36,7 @@ func main() {
 	// public
 	mux.HandleFunc("POST /signup", a.Signup)
 	mux.HandleFunc("POST /login", a.Login)
+	mux.HandleFunc("POST /logout", a.Logout)
 
 	// protected — wrap a sub-mux with Auth
 	users := http.NewServeMux()

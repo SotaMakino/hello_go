@@ -3,7 +3,7 @@ import { login, signup } from './api/auth'
 
 function AuthForm({ onSuccess }) {
   const [mode, setMode] = useState('login')
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -14,9 +14,9 @@ function AuthForm({ onSuccess }) {
     setError('')
     try {
       if (mode === 'login') {
-        await login(email, password)
+        await login(username, password)
       } else {
-        await signup(email, password)
+        await signup(username, password)
       }
       onSuccess()
     } catch (err) {
@@ -34,11 +34,10 @@ function AuthForm({ onSuccess }) {
 
       <form onSubmit={submit}>
         <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          autoComplete="email"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Username"
+          autoComplete="username"
           required
         />
         <input

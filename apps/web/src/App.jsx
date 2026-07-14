@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import AuthForm from './AuthForm'
-import { getToken, logout } from './api/auth'
+import { logout } from './api/auth'
 import './App.css'
 
 const API = 'http://localhost:8080'
 
 function App() {
-  const [authed, setAuthed] = useState(() => Boolean(getToken()))
+  const [authed, setAuthed] = useState(null) // null = still checking
   const [users, setUsers] = useState([])
   const [id, setId] = useState('')
   const [name, setName] = useState('')
@@ -14,9 +14,14 @@ function App() {
 
   async function loadUsers() {
     try {
-      const res = await fetch(`${API}/users`)
+      const res = await fetch(`${API}/users`, { credentials: 'include' })
+      if (res.status === 401) {
+        setAuthed(false)
+        return
+      }
       if (!res.ok) throw new Error(`server returned ${res.status}`)
       setUsers(await res.json())
+      setAuthed(true)
       setError('')
     } catch (err) {
       setError(`Failed to load users: ${err.message}`)
@@ -32,6 +37,7 @@ function App() {
     try {
       const res = await fetch(`${API}/users`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, name }),
       })
@@ -53,6 +59,7 @@ function App() {
     try {
       const res = await fetch(`${API}/users/${user.id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName }),
       })
@@ -63,10 +70,12 @@ function App() {
     }
   }
 
+  if (authed === null) return null // checking session
+
   if (!authed) {
     return (
       <main className="app">
-        <AuthForm onSuccess={() => setAuthed(true)} />
+        <AuthForm onSuccess={loadUsers} />
       </main>
     )
   }
@@ -77,8 +86,8 @@ function App() {
       <button
         type="button"
         className="link"
-        onClick={() => {
-          logout()
+        onClick={async () => {
+          await logout()
           setAuthed(false)
         }}
       >
