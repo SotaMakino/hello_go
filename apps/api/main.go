@@ -22,9 +22,9 @@ func env(key, fallback string) string {
 
 func main() {
 	port := env("PORT", "8080")
-	dbPath := env("DB_PATH", "app.db")
+	dbURL := env("DATABASE_URL", "postgres://localhost:5432/hellodb")
 
-	db, err := store.Open(dbPath)
+	db, err := store.Open(dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}

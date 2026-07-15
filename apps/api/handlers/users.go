@@ -18,7 +18,7 @@ type Users struct {
 
 func (h *Users) Get(w http.ResponseWriter, r *http.Request) {
 	var u User
-	err := h.DB.QueryRow("SELECT id, name FROM users WHERE id = ?", r.PathValue("id")).
+	err := h.DB.QueryRow("SELECT id, name FROM users WHERE id = $1", r.PathValue("id")).
 		Scan(&u.ID, &u.Name)
 	if err == sql.ErrNoRows {
 		http.Error(w, "user not found", http.StatusNotFound)
@@ -38,7 +38,7 @@ func (h *Users) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
-	_, err := h.DB.Exec("INSERT INTO users (id, name) VALUES (?, ?)", u.ID, u.Name)
+	_, err := h.DB.Exec("INSERT INTO users (id, name) VALUES ($1, $2)", u.ID, u.Name)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			writeError(w, http.StatusConflict, "user already exists") // 409!
@@ -82,7 +82,7 @@ func (h *Users) Update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
-	if _, err := h.DB.Exec("UPDATE users SET name = ? WHERE id = ?", u.Name, r.PathValue("id")); err != nil {
+	if _, err := h.DB.Exec("UPDATE users SET name = $1 WHERE id = $2", u.Name, r.PathValue("id")); err != nil {
 		http.Error(w, "update failed", http.StatusInternalServerError)
 		return
 	}

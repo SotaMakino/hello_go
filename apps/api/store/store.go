@@ -3,12 +3,15 @@ package store
 import (
 	"database/sql"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func Open(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
+func Open(url string) (*sql.DB, error) {
+	db, err := sql.Open("pgx", url)
 	if err != nil {
+		return nil, err
+	}
+	if err := db.Ping(); err != nil {
 		return nil, err
 	}
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT)`)
@@ -19,7 +22,7 @@ func Open(path string) (*sql.DB, error) {
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS sessions (
 		token TEXT PRIMARY KEY,
 		username TEXT NOT NULL,
-		expires_at DATETIME NOT NULL
+		expires_at TIMESTAMPTZ NOT NULL
 	)`)
 	return db, err
 }

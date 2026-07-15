@@ -19,7 +19,7 @@ func Auth(db *sql.DB, next http.Handler) http.Handler {
 		var username string
 		var expires time.Time
 		err = db.QueryRow(
-			"SELECT username, expires_at FROM sessions WHERE token = ?",
+			"SELECT username, expires_at FROM sessions WHERE token = $1",
 			cookie.Value).Scan(&username, &expires)
 		if err != nil || time.Now().After(expires) {
 			unauthorized(w)
