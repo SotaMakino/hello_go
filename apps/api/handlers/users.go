@@ -3,8 +3,11 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type User struct {
@@ -40,7 +43,8 @@ func (h *Users) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err := h.DB.Exec("INSERT INTO users (id, name) VALUES ($1, $2)", u.ID, u.Name)
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE") {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique_violation
 			writeError(w, http.StatusConflict, "user already exists") // 409!
 			return
 		}
