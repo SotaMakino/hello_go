@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import AuthForm from './AuthForm'
 import { logout } from './api/auth'
+import { request } from './api/client'
 import './App.css'
-
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 
 function App() {
   const [authed, setAuthed] = useState(null) // null = still checking
@@ -13,17 +12,16 @@ function App() {
   const [error, setError] = useState('')
 
   async function loadUsers() {
+    setError('')
     try {
-      const res = await fetch(`${API}/users`, { credentials: 'include' })
-      if (res.status === 401) {
+      const res = await request('/users')
+      setUsers(await res.json())
+      setAuthed(true)
+    } catch (err) {
+      if (err.status === 401) {
         setAuthed(false)
         return
       }
-      if (!res.ok) throw new Error(`server returned ${res.status}`)
-      setUsers(await res.json())
-      setAuthed(true)
-      setError('')
-    } catch (err) {
       setError(`Failed to load users: ${err.message}`)
     }
   }
@@ -35,16 +33,7 @@ function App() {
   async function createUser(e) {
     e.preventDefault()
     try {
-      const res = await fetch(`${API}/users`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, name }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error ?? `server returned ${res.status}`)
-      }
+      await request('/users', { method: 'POST', body: { id, name } })
       setId('')
       setName('')
       await loadUsers()
@@ -57,20 +46,40 @@ function App() {
     const newName = window.prompt(`New name for ${user.name}:`, user.name)
     if (!newName || newName === user.name) return
     try {
-      const res = await fetch(`${API}/users/${user.id}`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName }),
-      })
-      if (!res.ok) throw new Error(`server returned ${res.status}`)
+      await request(`/users/${user.id}`, { method: 'PUT', body: { name: newName } })
       await loadUsers()
     } catch (err) {
       setError(`Failed to update user: ${err.message}`)
     }
   }
 
-  if (authed === null) return null // checking session
+  async function handleLogout() {
+    try {
+      await logout()
+    } catch {
+      // even if the server is unreachable, drop back to the login screen
+    }
+    setAuthed(false)
+  }
+
+  if (authed === null) {
+    // still checking the session; if the check itself failed, say so
+    if (!error) {
+      return (
+        <main className="app">
+          <p>Connecting to server…</p>
+        </main>
+      )
+    }
+    return (
+      <main className="app">
+        <p className="error">{error}</p>
+        <button type="button" onClick={loadUsers}>
+          Retry
+        </button>
+      </main>
+    )
+  }
 
   if (!authed) {
     return (
@@ -83,14 +92,7 @@ function App() {
   return (
     <main className="app">
       <h1>Users</h1>
-      <button
-        type="button"
-        className="link"
-        onClick={async () => {
-          await logout()
-          setAuthed(false)
-        }}
-      >
+      <button type="button" className="link" onClick={handleLogout}>
         Log out
       </button>
 
