@@ -44,8 +44,10 @@ func main() {
 	users.HandleFunc("GET /users/{id}", h.Get)
 	users.HandleFunc("POST /users", h.Create)
 	users.HandleFunc("PUT /users/{id}", h.Update)
+	users.HandleFunc("GET /stats", h.Stats)
 	mux.Handle("/users", middleware.Auth(db, users))
 	mux.Handle("/users/", middleware.Auth(db, users))
+	mux.Handle("/stats", middleware.Auth(db, users))
 
 	allowedOrigin := env("ALLOWED_ORIGIN", "http://localhost:5173")
 	srv := &http.Server{
