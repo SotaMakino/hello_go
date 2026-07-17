@@ -16,22 +16,14 @@ type particle = {
 
 type burst = {x: int, y: int, key: int, particles: array<particle>}
 
-let burstColors = [
-  "#aa3bff",
-  "#f59e0b",
-  "#ef4444",
-  "#22c55e",
-  "#06b6d4",
-  "#ec4899",
-  "#facc15",
-]
+let burstColors = ["#aa3bff", "#f59e0b", "#ef4444", "#22c55e", "#06b6d4", "#ec4899", "#facc15"]
 
 let makeBurst = (x, y, scale, key) => {
   let count = 24
   let particles = Belt.Array.makeBy(count, i => {
     let angle =
       2.0 *. Js.Math._PI *. Belt.Int.toFloat(i) /. Belt.Int.toFloat(count) +.
-      (Js.Math.random() -. 0.5) *. 0.5
+        (Js.Math.random() -. 0.5) *. 0.5
     let distance = (55.0 +. Js.Math.random() *. 65.0) *. scale
     {
       dx: Js.Math.cos(angle) *. distance,
@@ -109,10 +101,7 @@ let make = () => {
     let (x, y) = if x == 0 && y == 0 {
       let button: Dom.element = e->ReactEvent.Mouse.currentTarget->Obj.magic
       let r = button->getBoundingClientRect
-      (
-        Belt.Float.toInt(r.left +. r.width /. 2.0),
-        Belt.Float.toInt(r.top +. r.height /. 2.0),
-      )
+      (Belt.Float.toInt(r.left +. r.width /. 2.0), Belt.Float.toInt(r.top +. r.height /. 2.0))
     } else {
       (x, y)
     }
@@ -121,7 +110,9 @@ let make = () => {
     let fire = (offsetX, offsetY, scale, afterMs, index) => {
       let key = base + index
       let _ = Js.Global.setTimeout(() => {
-        setBursts(prev => prev->Belt.Array.concat([makeBurst(x + offsetX, y + offsetY, scale, key)]))
+        setBursts(prev =>
+          prev->Belt.Array.concat([makeBurst(x + offsetX, y + offsetY, scale, key)])
+        )
         let _ = Js.Global.setTimeout(
           () => setBursts(prev => prev->Belt.Array.keep(b => b.key != key)),
           1400,
@@ -186,9 +177,7 @@ let make = () => {
           placeholder="What needs doing?"
           ariaLabel="New todo"
         />
-        <button type_="submit" className="primary" disabled=busy>
-          {React.string("Add")}
-        </button>
+        <button type_="submit" className="primary" disabled=busy> {React.string("Add")} </button>
       </form>
       {fieldError == ""
         ? React.null
@@ -219,12 +208,10 @@ let make = () => {
           key={b.key->Belt.Int.toString}
           className="firework"
           ariaHidden=true
-          style={
-            {
-              left: `${b.x->Belt.Int.toString}px`,
-              top: `${b.y->Belt.Int.toString}px`,
-            }
-          }>
+          style={{
+            left: `${b.x->Belt.Int.toString}px`,
+            top: `${b.y->Belt.Int.toString}px`,
+          }}>
           {b.particles
           ->Belt.Array.mapWithIndex((i, p) => {
             let height = p.streak ? p.size *. 2.8 : p.size
@@ -241,9 +228,7 @@ let make = () => {
               ->ReactDOM.Style.unsafeAddProp("--dx", `${p.dx->Js.Float.toString}px`)
               ->ReactDOM.Style.unsafeAddProp("--dy", `${p.dy->Js.Float.toString}px`)
               ->ReactDOM.Style.unsafeAddProp("--rot", `${p.rot->Js.Float.toString}deg`)
-            <span
-              key={i->Belt.Int.toString} className={p.streak ? "streak" : "dot"} style
-            />
+            <span key={i->Belt.Int.toString} className={p.streak ? "streak" : "dot"} style />
           })
           ->React.array}
         </div>

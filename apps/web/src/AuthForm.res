@@ -49,15 +49,12 @@ let make = (~onSuccess: unit => unit) => {
           minLength=8
           required=true
         />
-        <button
-          type_="button" className="toggle-password" onClick={_ => setShowPassword(s => !s)}>
+        <button type_="button" className="toggle-password" onClick={_ => setShowPassword(s => !s)}>
           {React.string(showPassword ? "Hide" : "Show")}
         </button>
       </div>
       <button type_="submit" className="primary" disabled=busy>
-        {React.string(
-          busy ? "Please wait…" : mode == #login ? "Log in" : "Create account",
-        )}
+        {React.string(busy ? "Please wait…" : mode == #login ? "Log in" : "Create account")}
       </button>
     </form>
     <p>
