@@ -23,6 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# ReScript build output
-lib/
-*.res.mjs
+# Gleam build output
+build/
