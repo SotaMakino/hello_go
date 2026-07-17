@@ -4,5 +4,6 @@
   "package-specs": [{ "module": "esmodule", "in-source": true }],
   "suffix": ".res.mjs",
   "jsx": { "version": 4, "mode": "automatic" },
+  "warnings": { "error": "+a" },
   "bs-dependencies": ["@rescript/react"]
 }

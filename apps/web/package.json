@@ -8,7 +8,7 @@
     "res:build": "rescript",
     "res:watch": "rescript build -w",
     "build": "rescript && vite build",
-    "lint": "oxlint",
+    "lint": "rescript clean && rescript build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -20,7 +20,6 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
-    "oxlint": "^1.71.0",
     "rescript": "^11.1.4",
     "vite": "^8.1.1"
   }
