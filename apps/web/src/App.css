@@ -258,3 +258,52 @@
 .auth p {
   font-size: 14px;
 }
+
+/* --- Firework celebration --- */
+
+.firework {
+  position: fixed;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.firework span {
+  position: absolute;
+  opacity: 0; /* hidden until its animation-delay elapses */
+  animation-name: fw-burst;
+  animation-timing-function: cubic-bezier(0.16, 0.8, 0.32, 1);
+  animation-fill-mode: forwards;
+}
+
+.firework .dot {
+  border-radius: 50%;
+}
+
+.firework .streak {
+  border-radius: 2px;
+}
+
+@keyframes fw-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(var(--rot)) scale(1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    /* drift outward, then gravity drags the last stretch downward */
+    transform: translate(var(--dx), calc(var(--dy) + 55px))
+      rotate(calc(var(--rot) + 160deg)) scale(0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .firework span {
+    animation: none;
+    opacity: 0;
+  }
+}

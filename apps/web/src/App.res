@@ -2,6 +2,54 @@
 
 type todo = {id: int, title: string}
 
+// celebration fireworks: staggered bursts of randomized particles
+type particle = {
+  dx: float,
+  dy: float,
+  size: float,
+  rot: float,
+  color: string,
+  delay: int,
+  duration: int,
+  streak: bool, // confetti streak instead of a round spark
+}
+
+type burst = {x: int, y: int, key: int, particles: array<particle>}
+
+let burstColors = [
+  "#aa3bff",
+  "#f59e0b",
+  "#ef4444",
+  "#22c55e",
+  "#06b6d4",
+  "#ec4899",
+  "#facc15",
+]
+
+let makeBurst = (x, y, scale, key) => {
+  let count = 24
+  let particles = Belt.Array.makeBy(count, i => {
+    let angle =
+      2.0 *. Js.Math._PI *. Belt.Int.toFloat(i) /. Belt.Int.toFloat(count) +.
+      (Js.Math.random() -. 0.5) *. 0.5
+    let distance = (55.0 +. Js.Math.random() *. 65.0) *. scale
+    {
+      dx: Js.Math.cos(angle) *. distance,
+      dy: Js.Math.sin(angle) *. distance,
+      size: 4.0 +. Js.Math.random() *. 5.0,
+      rot: Js.Math.random() *. 360.0,
+      color: burstColors->Belt.Array.getExn(mod(i, Belt.Array.length(burstColors))),
+      delay: Js.Math.random_int(0, 90),
+      duration: 700 + Js.Math.random_int(0, 450),
+      streak: mod(i, 3) == 0,
+    }
+  })
+  {x, y, key, particles}
+}
+
+type rect = {left: float, top: float, width: float, height: float}
+@send external getBoundingClientRect: Dom.element => rect = "getBoundingClientRect"
+
 @react.component
 let make = () => {
   let (authed, setAuthed) = React.useState(() => None) // None = still checking
@@ -10,6 +58,7 @@ let make = () => {
   let (error, setError) = React.useState(() => "")
   let (fieldError, setFieldError) = React.useState(() => "") // client-side validation
   let (busy, setBusy) = React.useState(() => false)
+  let (bursts, setBursts) = React.useState(() => [])
 
   let loadTodos = async () => {
     setError(_ => "")
@@ -51,6 +100,37 @@ let make = () => {
       }
       setBusy(_ => false)
     }
+  }
+
+  let celebrate = (e: ReactEvent.Mouse.t) => {
+    let x = e->ReactEvent.Mouse.clientX
+    let y = e->ReactEvent.Mouse.clientY
+    // keyboard activation fires a click at 0,0 — burst from the button instead
+    let (x, y) = if x == 0 && y == 0 {
+      let button: Dom.element = e->ReactEvent.Mouse.currentTarget->Obj.magic
+      let r = button->getBoundingClientRect
+      (
+        Belt.Float.toInt(r.left +. r.width /. 2.0),
+        Belt.Float.toInt(r.top +. r.height /. 2.0),
+      )
+    } else {
+      (x, y)
+    }
+    let base = Js.Date.now()->Belt.Float.toInt
+    // a small finale: main burst, then two smaller ones off to the sides
+    let fire = (offsetX, offsetY, scale, afterMs, index) => {
+      let key = base + index
+      let _ = Js.Global.setTimeout(() => {
+        setBursts(prev => prev->Belt.Array.concat([makeBurst(x + offsetX, y + offsetY, scale, key)]))
+        let _ = Js.Global.setTimeout(
+          () => setBursts(prev => prev->Belt.Array.keep(b => b.key != key)),
+          1400,
+        )
+      }, afterMs)
+    }
+    fire(0, 0, 1.2, 0, 0)
+    fire(-75, -50, 0.8, 170, 1)
+    fire(70, -65, 0.9, 340, 2)
   }
 
   let deleteTodo = async (todo: todo) => {
@@ -122,14 +202,53 @@ let make = () => {
                 <span className="todo-title"> {React.string(t.title)} </span>
                 <button
                   type_="button"
-                  className="ghost small danger"
-                  onClick={_ => deleteTodo(t)->ignore}>
-                  {React.string("Delete")}
+                  className="ghost small"
+                  onClick={e => {
+                    celebrate(e)
+                    deleteTodo(t)->ignore
+                  }}>
+                  {React.string("Done")}
                 </button>
               </li>
             )
             ->React.array}
           </ul>}
+      {bursts
+      ->Belt.Array.map(b =>
+        <div
+          key={b.key->Belt.Int.toString}
+          className="firework"
+          ariaHidden=true
+          style={
+            {
+              left: `${b.x->Belt.Int.toString}px`,
+              top: `${b.y->Belt.Int.toString}px`,
+            }
+          }>
+          {b.particles
+          ->Belt.Array.mapWithIndex((i, p) => {
+            let height = p.streak ? p.size *. 2.8 : p.size
+            let base: ReactDOM.Style.t = {
+              backgroundColor: p.color,
+              width: `${p.size->Js.Float.toString}px`,
+              height: `${height->Js.Float.toString}px`,
+              boxShadow: `0 0 6px ${p.color}`,
+              animationDelay: `${p.delay->Belt.Int.toString}ms`,
+              animationDuration: `${p.duration->Belt.Int.toString}ms`,
+            }
+            let style =
+              base
+              ->ReactDOM.Style.unsafeAddProp("--dx", `${p.dx->Js.Float.toString}px`)
+              ->ReactDOM.Style.unsafeAddProp("--dy", `${p.dy->Js.Float.toString}px`)
+              ->ReactDOM.Style.unsafeAddProp("--rot", `${p.rot->Js.Float.toString}deg`)
+            <span
+              key={i->Belt.Int.toString} className={p.streak ? "streak" : "dot"} style
+            />
+          })
+          ->React.array}
+        </div>
+      )
+      ->React.array}
     </main>
   }
 }
