@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"time"
 
-	"example.com/hello-go/handlers"
-	"example.com/hello-go/middleware"
-	"example.com/hello-go/store"
+	"example.com/parole/handlers"
+	"example.com/parole/middleware"
+	"example.com/parole/store"
 )
 
 func env(key, fallback string) string {

@@ -1,4 +1,4 @@
-module example.com/hello-go
+module example.com/parole
 
 go 1.26.2
 

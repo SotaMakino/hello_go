@@ -1,4 +1,4 @@
-# hello-go
+# parole
 
 Bun monorepo: **Parole**, a Wordle-style trainer for beginner Italian
 vocabulary, built as a Go REST API plus a Vite + ReScript (React) client. Each

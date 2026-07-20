@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/hello-go/middleware"
-	"example.com/hello-go/store"
+	"example.com/parole/middleware"
+	"example.com/parole/store"
 )
 
 func setupDB(t *testing.T) *sql.DB {

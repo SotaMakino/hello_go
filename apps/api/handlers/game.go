@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"example.com/hello-go/middleware"
+	"example.com/parole/middleware"
 )
 
 const (
