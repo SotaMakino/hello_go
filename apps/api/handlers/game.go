@@ -3,7 +3,6 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"math/rand/v2"
 	"net/http"
 	"strings"
 
@@ -12,7 +11,9 @@ import (
 
 const (
 	WordLength = 5
-	MaxGuesses = 6
+	MaxGuesses = 5
+	// a missed word returns once this many later rounds have been played
+	ReviewGap = 3
 )
 
 type Games struct {
@@ -33,6 +34,7 @@ type guessResult struct {
 type gameState struct {
 	ID         int64         `json:"id"`
 	Status     string        `json:"status"`
+	Clue       string        `json:"clue"` // English meaning of the answer
 	Guesses    []guessResult `json:"guesses"`
 	MaxGuesses int           `json:"maxGuesses"`
 	WordLength int           `json:"wordLength"`
@@ -76,9 +78,69 @@ func (h *Games) latest(user string) (*game, error) {
 	return g, err
 }
 
+// nextWord picks the curriculum word for a user's next game. Priority:
+//  1. spaced repetition — a word the user lost at least ReviewGap finished
+//     rounds ago and has not won since (oldest miss first)
+//  2. the first word in curriculum order the user has never played
+//  3. the not-yet-won word played longest ago (losses not due yet)
+//  4. everything is won: recycle the word won longest ago
+func (h *Games) nextWord(user string) (string, error) {
+	rows, err := h.DB.Query(
+		"SELECT word, status FROM games WHERE username = $1 AND status <> 'playing' ORDER BY id",
+		user)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+	type outcome struct {
+		round int // 1-based index of the user's finished games
+		won   bool
+	}
+	last := map[string]outcome{}
+	round := 0
+	for rows.Next() {
+		var word, status string
+		if err := rows.Scan(&word, &status); err != nil {
+			return "", err
+		}
+		round++
+		last[word] = outcome{round, status == "won"}
+	}
+	if err := rows.Err(); err != nil {
+		return "", err
+	}
+
+	pickOldest := func(match func(outcome) bool) string {
+		word, best := "", round+1
+		for _, v := range words {
+			if o, seen := last[v.Word]; seen && match(o) && o.round < best {
+				word, best = v.Word, o.round
+			}
+		}
+		return word
+	}
+
+	if w := pickOldest(func(o outcome) bool { return !o.won && round-o.round >= ReviewGap }); w != "" {
+		return w, nil
+	}
+	for _, v := range words {
+		if _, seen := last[v.Word]; !seen {
+			return v.Word, nil
+		}
+	}
+	if w := pickOldest(func(o outcome) bool { return !o.won }); w != "" {
+		return w, nil
+	}
+	return pickOldest(func(o outcome) bool { return true }), nil
+}
+
 func (h *Games) create(user string) (*game, error) {
-	g := &game{word: words[rand.IntN(len(words))], status: "playing"}
-	err := h.DB.QueryRow(
+	word, err := h.nextWord(user)
+	if err != nil {
+		return nil, err
+	}
+	g := &game{word: word, status: "playing"}
+	err = h.DB.QueryRow(
 		"INSERT INTO games (username, word, status) VALUES ($1, $2, 'playing') RETURNING id",
 		user, g.word).Scan(&g.id)
 	return g, err
@@ -88,6 +150,7 @@ func (h *Games) state(g *game) (gameState, error) {
 	s := gameState{
 		ID:         g.id,
 		Status:     g.status,
+		Clue:       clues[g.word],
 		Guesses:    []guessResult{}, // non-nil so an empty list encodes as [], not null
 		MaxGuesses: MaxGuesses,
 		WordLength: WordLength,

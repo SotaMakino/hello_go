@@ -74,19 +74,22 @@ func decodeState(t *testing.T, rec *httptest.ResponseRecorder) gameState {
 
 func TestWords_AllFiveUppercaseLetters(t *testing.T) {
 	seen := map[string]bool{}
-	for _, w := range words {
-		if len(w) != WordLength {
-			t.Errorf("%q is not %d letters", w, WordLength)
+	for _, v := range words {
+		if len(v.Word) != WordLength {
+			t.Errorf("%q is not %d letters", v.Word, WordLength)
 		}
-		for _, r := range w {
+		for _, r := range v.Word {
 			if r < 'A' || r > 'Z' {
-				t.Errorf("%q contains non A-Z letter %q", w, r)
+				t.Errorf("%q contains non A-Z letter %q", v.Word, r)
 			}
 		}
-		if seen[w] {
-			t.Errorf("%q appears twice", w)
+		if v.Clue == "" {
+			t.Errorf("%q has no clue", v.Word)
 		}
-		seen[w] = true
+		if seen[v.Word] {
+			t.Errorf("%q appears twice", v.Word)
+		}
+		seen[v.Word] = true
 	}
 }
 
@@ -128,6 +131,75 @@ func TestCurrentGame_CreatesOne(t *testing.T) {
 	}
 	if s.Word != "" {
 		t.Errorf("answer leaked in an unfinished game: %+v", s)
+	}
+	if s.Clue != words[0].Clue {
+		t.Errorf("expected the first curriculum clue %q, got %q", words[0].Clue, s.Clue)
+	}
+}
+
+// finishGame records a completed round directly, for curriculum tests.
+func finishGame(t *testing.T, h *Games, user, word, status string) {
+	t.Helper()
+	if _, err := h.DB.Exec(
+		"INSERT INTO games (username, word, status) VALUES ($1, $2, $3)",
+		user, word, status); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestNextWord_CognatesFirstForNewUser(t *testing.T) {
+	h := setupGames(t)
+
+	w, err := h.nextWord("ann")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w != words[0].Word {
+		t.Errorf("expected the first curriculum word %q, got %q", words[0].Word, w)
+	}
+}
+
+func TestNextWord_AdvancesThroughCurriculum(t *testing.T) {
+	h := setupGames(t)
+	finishGame(t, h, "ann", words[0].Word, "won")
+	finishGame(t, h, "ann", words[1].Word, "won")
+
+	w, err := h.nextWord("ann")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w != words[2].Word {
+		t.Errorf("expected %q, got %q", words[2].Word, w)
+	}
+}
+
+func TestNextWord_MissedWordComesBackAfterGap(t *testing.T) {
+	h := setupGames(t)
+	finishGame(t, h, "ann", words[0].Word, "lost")
+	for i := 1; i <= ReviewGap; i++ {
+		finishGame(t, h, "ann", words[i].Word, "won")
+	}
+
+	w, err := h.nextWord("ann")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w != words[0].Word {
+		t.Errorf("expected the missed word %q to return, got %q", words[0].Word, w)
+	}
+}
+
+func TestNextWord_MissedWordNotDueYet(t *testing.T) {
+	h := setupGames(t)
+	finishGame(t, h, "ann", words[0].Word, "lost")
+	finishGame(t, h, "ann", words[1].Word, "won")
+
+	w, err := h.nextWord("ann")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w != words[2].Word {
+		t.Errorf("expected the next unseen word %q, got %q", words[2].Word, w)
 	}
 }
 
@@ -176,11 +248,11 @@ func TestGuess_WrongKeepsPlaying(t *testing.T) {
 	}
 }
 
-func TestGuess_SixWrongLoses(t *testing.T) {
+func TestGuess_FiveWrongLoses(t *testing.T) {
 	h := setupGames(t)
 	startGame(t, h, "ann", "FIORE")
 
-	wrong := []string{"ZUCCA", "PIZZA", "GATTO", "AMORE", "LATTE", "MONDO"}
+	wrong := []string{"ZUCCA", "PIZZA", "GATTO", "AMORE", "LATTE"}
 	var last *httptest.ResponseRecorder
 	for _, w := range wrong {
 		last = guessWord(h, "ann", w)
