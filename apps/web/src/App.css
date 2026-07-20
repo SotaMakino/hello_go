@@ -1,6 +1,6 @@
 .app {
   width: 100%;
-  max-width: 560px;
+  max-width: 640px;
   margin: 2.5rem auto;
   padding: 0 1.25rem;
   box-sizing: border-box;
@@ -103,83 +103,48 @@
   margin: 0.15rem 0 0;
 }
 
-/* --- Tries --- */
-
-.tries {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 1.25rem auto 0;
-}
-
-.tries-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.try-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.try-dot.spent {
-  background: none;
-  border: 2px solid var(--border);
-  box-sizing: border-box;
-}
-
-.wrong-letters {
-  font-size: 13px;
-  margin-left: 0.5rem;
-  letter-spacing: 2px;
-}
-
 /* --- Word pairs --- */
 
+/* two aligned columns: Italian words right-aligned, English tiles
+   left-aligned, both sized by their widest row */
 .pairs {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: max-content;
-  max-width: 100%;
-  margin: 1.25rem auto 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: center;
+  column-gap: 1.25rem;
+  row-gap: 10px;
+  margin: 1.5rem auto 0;
 }
 
 .pair-row {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
+  display: contents;
 }
 
 .italian {
-  width: 9.5rem;
   text-align: right;
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 1px;
   color: var(--text-h);
+  white-space: nowrap;
 }
 
 .english-tiles {
   display: flex;
-  gap: 5px;
+  justify-self: start;
+  gap: 4px;
 }
 
 .tile {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid var(--border);
   border-radius: 6px;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text-h);
   transition: background 0.15s, border-color 0.15s;
@@ -191,23 +156,129 @@
   color: #fff;
 }
 
-@media (max-width: 640px) {
-  .pair-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
+@media (max-width: 560px) {
+  .pairs {
+    column-gap: 0.75rem;
   }
 
   .italian {
-    width: auto;
-    text-align: left;
-    font-size: 16px;
+    font-size: 15px;
+    letter-spacing: 0.5px;
   }
 
   .tile {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+    border-width: 1.5px;
+  }
+}
+
+/* --- Typed letters --- */
+
+.typed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 1.25rem auto 0;
+}
+
+.typed-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-right: 0.35rem;
+}
+
+.typed-empty {
+  font-size: 13px;
+  font-style: italic;
+}
+
+.chip {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.chip.hit {
+  background: #538d4e;
+}
+
+.chip.miss {
+  background: #787c7e;
+  opacity: 0.75;
+}
+
+@media (prefers-color-scheme: dark) {
+  .chip.miss {
+    background: #3a3a3c;
+  }
+}
+
+/* --- Keyboard --- */
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 1.5rem;
+}
+
+.kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.key {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 48px;
+  flex: 0 1 42px;
+  min-width: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s, opacity 0.15s;
+}
+
+.key:hover:enabled {
+  filter: brightness(0.92);
+}
+
+.key:disabled {
+  cursor: default;
+}
+
+.key.correct {
+  background: #538d4e;
+  color: #fff;
+}
+
+.key.absent {
+  background: #787c7e;
+  color: #fff;
+  opacity: 0.65;
+}
+
+@media (prefers-color-scheme: dark) {
+  .key.absent {
+    background: #3a3a3c;
   }
 }
 

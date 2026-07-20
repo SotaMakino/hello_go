@@ -11,8 +11,10 @@ import (
 
 const (
 	WordsPerRound = 5
-	MaxTries      = 5 // wrong letters allowed before the round is lost
-	// a missed round's words return once this many later rounds have been played
+	// misses are unlimited, but finishing with more than this many flags the
+	// round's words for review ("lost")
+	ReviewMisses = 5
+	// a flagged round's words return once this many later rounds have been played
 	ReviewGap = 3
 )
 
@@ -34,13 +36,11 @@ type pair struct {
 }
 
 type gameState struct {
-	ID        int64    `json:"id"`
-	Status    string   `json:"status"`
-	Pairs     []pair   `json:"pairs"`
-	Guessed   []string `json:"guessed"` // every letter tried, in order
-	Wrong     []string `json:"wrong"`   // the tried letters that hit nothing
-	TriesLeft int      `json:"triesLeft"`
-	MaxTries  int      `json:"maxTries"`
+	ID      int64    `json:"id"`
+	Status  string   `json:"status"` // "lost" = completed, flagged for review
+	Pairs   []pair   `json:"pairs"`
+	Guessed []string `json:"guessed"` // every letter tried, in order
+	Wrong   []string `json:"wrong"`   // the tried letters that hit nothing
 }
 
 func (h *Games) latest(user string) (*game, error) {
@@ -196,19 +196,17 @@ func (h *Games) state(g *game) (gameState, error) {
 		guessedSet[l] = true
 	}
 	s := gameState{
-		ID:       g.id,
-		Status:   g.status,
-		Pairs:    []pair{},
-		Guessed:  letters,
-		Wrong:    []string{},
-		MaxTries: MaxTries,
+		ID:      g.id,
+		Status:  g.status,
+		Pairs:   []pair{},
+		Guessed: letters,
+		Wrong:   []string{},
 	}
 	for _, l := range letters {
 		if !g.inAnyWord(l) {
 			s.Wrong = append(s.Wrong, l)
 		}
 	}
-	s.TriesLeft = MaxTries - len(s.Wrong)
 	for _, w := range g.words {
 		e := english[w]
 		revealed := make([]string, len(e))
@@ -271,6 +269,28 @@ func (h *Games) New(w http.ResponseWriter, r *http.Request) {
 	h.writeState(w, http.StatusCreated, g)
 }
 
+// Retry restarts the just-finished round with the same five words.
+func (h *Games) Retry(w http.ResponseWriter, r *http.Request) {
+	user := middleware.Username(r)
+	g, err := h.latest(user)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "query failed")
+		return
+	}
+	if g == nil || g.status == "playing" {
+		writeError(w, http.StatusConflict, "no finished game to retry")
+		return
+	}
+	fresh := &game{words: g.words, status: "playing"}
+	if err := h.DB.QueryRow(
+		"INSERT INTO games (username, word, status) VALUES ($1, $2, 'playing') RETURNING id",
+		user, strings.Join(g.words, ",")).Scan(&fresh.id); err != nil {
+		writeError(w, http.StatusInternalServerError, "could not start a game")
+		return
+	}
+	h.writeState(w, http.StatusCreated, fresh)
+}
+
 // Guess submits one letter for the current round.
 func (h *Games) Guess(w http.ResponseWriter, r *http.Request) {
 	user := middleware.Username(r)
@@ -322,14 +342,16 @@ func (h *Games) Guess(w http.ResponseWriter, r *http.Request) {
 	}
 	guessedSet[letter] = true
 
-	switch {
-	case g.inAnyWord(letter):
-		if g.solved(guessedSet) {
-			g.status = "won"
-		}
-	default:
-		if wrong+1 >= MaxTries {
+	if !g.inAnyWord(letter) {
+		wrong++
+	}
+	// misses never end the round; the outcome is decided once everything is
+	// revealed — too many misses flags the words for review
+	if g.solved(guessedSet) {
+		if wrong > ReviewMisses {
 			g.status = "lost"
+		} else {
+			g.status = "won"
 		}
 	}
 	if g.status != "playing" {

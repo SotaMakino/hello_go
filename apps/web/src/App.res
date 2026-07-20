@@ -4,12 +4,10 @@ type pair = {italian: string, english: array<string>} // "" = still hidden
 
 type game = {
   id: int,
-  status: string, // "playing" | "won" | "lost"
+  status: string, // "playing" | "won" | "lost" ("lost" = flagged for review)
   pairs: array<pair>,
   guessed: array<string>,
   wrong: array<string>,
-  triesLeft: int,
-  maxTries: int,
 }
 
 // celebration fireworks: staggered bursts of randomized particles
@@ -61,6 +59,12 @@ type keyboardEvent
 external addKeyListener: (string, keyboardEvent => unit) => unit = "addEventListener"
 @val @scope("document")
 external removeKeyListener: (string, keyboardEvent => unit) => unit = "removeEventListener"
+
+let keyboardRows = [
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["Z", "X", "C", "V", "B", "N", "M"],
+]
 
 @react.component
 let make = () => {
@@ -137,10 +141,10 @@ let make = () => {
     }
   }
 
-  let newGame = async () => {
+  let startRound = async path => {
     setBusy(_ => true)
     setNotice(_ => "")
-    switch await ApiClient.request("/game", ~method_="POST") {
+    switch await ApiClient.request(path, ~method_="POST") {
     | Ok(res) => {
         let fetched: game = await ApiClient.json(res)
         setGame(_ => Some(fetched))
@@ -150,6 +154,9 @@ let make = () => {
     }
     setBusy(_ => false)
   }
+
+  let newGame = () => startRound("/game")
+  let retryGame = () => startRound("/game/retry")
 
   let handleKey = k => {
     if k->Js.String2.length == 1 && %re("/^[a-z]$/i")->Js.Re.test_(k) {
@@ -208,7 +215,7 @@ let make = () => {
         <div>
           <h1> {React.string("Parole")} </h1>
           <p className="tagline">
-            {React.string("Type letters to reveal the English words — 5 misses and it's over")}
+            {React.string("Type letters to reveal the English word for each Italian one")}
           </p>
         </div>
         <button type_="button" className="ghost" onClick={_ => handleLogout()->ignore}>
@@ -220,19 +227,6 @@ let make = () => {
       | None => React.null
       | Some(g) =>
         <>
-          <div className="tries">
-            <span className="tries-label"> {React.string("Tries")} </span>
-            {Belt.Array.makeBy(g.maxTries, i =>
-              <span
-                key={i->Belt.Int.toString} className={i < g.triesLeft ? "try-dot" : "try-dot spent"}
-              />
-            )->React.array}
-            {g.wrong->Belt.Array.length == 0
-              ? React.null
-              : <span className="wrong-letters">
-                  {React.string(`Missed: ${g.wrong->Js.Array2.joinWith(" ")}`)}
-                </span>}
-          </div>
           <div className="pairs">
             {g.pairs
             ->Belt.Array.map(p =>
@@ -255,6 +249,47 @@ let make = () => {
           {notice == ""
             ? React.null
             : <p className="notice" role="alert"> {React.string(notice)} </p>}
+          <div className="typed">
+            <span className="typed-label"> {React.string("Typed")} </span>
+            {g.guessed->Belt.Array.length == 0
+              ? <span className="typed-empty"> {React.string("no letters yet")} </span>
+              : g.guessed
+                ->Belt.Array.map(l =>
+                  <span
+                    key=l
+                    className={g.wrong->Belt.Array.some(w => w == l) ? "chip miss" : "chip hit"}>
+                    {React.string(l)}
+                  </span>
+                )
+                ->React.array}
+          </div>
+          <div className="keyboard">
+            {keyboardRows
+            ->Belt.Array.mapWithIndex((ri, row) =>
+              <div key={ri->Belt.Int.toString} className="kb-row">
+                {row
+                ->Belt.Array.map(letter => {
+                  let tried = g.guessed->Belt.Array.some(l => l == letter)
+                  let missed = g.wrong->Belt.Array.some(l => l == letter)
+                  let cls = switch (tried, missed) {
+                  | (true, true) => "key absent"
+                  | (true, false) => "key correct"
+                  | _ => "key"
+                  }
+                  <button
+                    key=letter
+                    type_="button"
+                    className=cls
+                    disabled=tried
+                    onClick={_ => submitLetter(letter)->ignore}>
+                    {React.string(letter)}
+                  </button>
+                })
+                ->React.array}
+              </div>
+            )
+            ->React.array}
+          </div>
           {g.status == "playing"
             ? React.null
             : <div className="banner">
@@ -262,9 +297,13 @@ let make = () => {
                   {React.string(
                     g.status == "won"
                       ? "Bravo! You revealed all five words."
-                      : "Out of tries — study the answers above. These words will come back for review.",
+                      : "All revealed — but with more than 5 misses, so these words will come back for review.",
                   )}
                 </p>
+                <button
+                  type_="button" className="ghost" disabled=busy onClick={_ => retryGame()->ignore}>
+                  {React.string("Retry")}
+                </button>
                 <button
                   type_="button" className="primary" disabled=busy onClick={_ => newGame()->ignore}>
                   {React.string("New game")}

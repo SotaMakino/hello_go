@@ -3,15 +3,16 @@
 Bun monorepo: **Parole**, a letter-reveal trainer for beginner Italian
 vocabulary, built as a Go REST API plus a Vite + ReScript (React) client. Each
 round shows five Italian words on the left with their English translations
-hidden on the right — only the word lengths are visible. Type a letter: if it
-occurs anywhere in the English words, every occurrence is revealed at once;
-if it hits nothing, it costs one of five tries. Reveal all five words before
-running out.
+hidden on the right — only the word lengths are visible. Type a letter (or tap
+the on-screen keyboard): if it occurs anywhere in the English words, every
+occurrence is revealed at once; misses are unlimited but each one is recorded.
+Finish with more than five misses and the round's words are flagged to come
+back for review — or hit Retry to play the same five again right away.
 
 It leans on research-backed techniques: retrieval practice (you recall the
 English from the Italian), cognates first (the curriculum starts with Italian
 words an English speaker can almost guess), immediate feedback, and spaced
-repetition (a missed round's words return three rounds later).
+repetition (flagged words return three rounds later).
 
 Each user gets their own progress behind cookie-session auth; letters are
 checked server-side so the answers never reach the browser until the round is
@@ -57,12 +58,14 @@ Endpoints: `POST /signup`, `POST /login`, `POST /logout` (public), and — with 
 session cookie, scoped to the logged-in user:
 
 - `GET /game` — current round: five Italian words with per-letter reveal
-  state for their English translations, tried letters, and tries left (starts
-  a round if the user has none)
-- `POST /game` — new round, once the current one is won or lost
+  state for their English translations, plus every tried and missed letter
+  (starts a round if the user has none)
+- `POST /game` — new round, once the current one is finished
+- `POST /game/retry` — replay the just-finished round's five words
 - `POST /game/guess` — submit one letter as `{"guess": "a"}`; a hit reveals
-  every occurrence across all five words, a miss costs a try, and the full
-  answers appear only when the round ends
+  every occurrence across all five words, misses are recorded (more than
+  five flags the round for review), and the full answers appear only when
+  the round ends
 
 The curriculum (Italian word + English translation, cognates first) lives in
 `apps/api/handlers/words.go`. New rounds pick five words server-side: words

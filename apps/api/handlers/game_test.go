@@ -125,7 +125,7 @@ func TestCurrentGame_CreatesFirstCurriculumRound(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rec.Code)
 	}
 	s := decodeState(t, rec)
-	if s.ID == 0 || s.Status != "playing" || s.TriesLeft != MaxTries {
+	if s.ID == 0 || s.Status != "playing" || len(s.Guessed) != 0 {
 		t.Errorf("expected a fresh playing round, got %+v", s)
 	}
 	if len(s.Pairs) != WordsPerRound {
@@ -157,8 +157,8 @@ func TestGuess_HitRevealsEveryOccurrence(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rec.Code)
 	}
 	s := decodeState(t, rec)
-	if s.TriesLeft != MaxTries || len(s.Wrong) != 0 {
-		t.Errorf("a hit must not cost a try: %+v", s)
+	if len(s.Wrong) != 0 {
+		t.Errorf("a hit must not count as a miss: %+v", s)
 	}
 	// TRAIN -> _ _ A _ _ and PARK -> _ A _ _
 	if s.Pairs[0].English[2] != "A" || s.Pairs[4].English[1] != "A" {
@@ -169,36 +169,23 @@ func TestGuess_HitRevealsEveryOccurrence(t *testing.T) {
 	}
 }
 
-func TestGuess_MissCostsATry(t *testing.T) {
-	h := setupGames(t)
-	startRound(t, h, "ann", testRound)
-
-	s := decodeState(t, guessLetter(h, "ann", "Z"))
-
-	if s.Status != "playing" || s.TriesLeft != MaxTries-1 {
-		t.Errorf("expected one try spent, got %+v", s)
-	}
-	if len(s.Wrong) != 1 || s.Wrong[0] != "Z" {
-		t.Errorf("expected Z recorded as wrong, got %+v", s.Wrong)
-	}
-}
-
-func TestGuess_FiveMissesLose(t *testing.T) {
+func TestGuess_MissIsRecordedButNeverEndsTheRound(t *testing.T) {
 	h := setupGames(t)
 	startRound(t, h, "ann", testRound)
 
 	var last *httptest.ResponseRecorder
-	for _, l := range []string{"Z", "Q", "J", "X", "V"} { // none occur in the round
+	// far more misses than the review threshold — the round must keep going
+	for _, l := range []string{"Z", "Q", "J", "X", "V", "W", "F", "G", "D", "E"} {
 		last = guessLetter(h, "ann", l)
 	}
 
 	s := decodeState(t, last)
-	if s.Status != "lost" || s.TriesLeft != 0 {
-		t.Errorf("expected a lost round, got %+v", s)
+	if s.Status != "playing" {
+		t.Errorf("misses must never end the round, got %+v", s)
 	}
-	// the answers are revealed on loss
-	if strings.Join(s.Pairs[0].English, "") != "TRAIN" {
-		t.Errorf("expected TRAIN revealed, got %+v", s.Pairs[0])
+	// none of the ten letters occur in TRAIN BANK MUSIC LION PARK
+	if len(s.Wrong) != 10 || s.Wrong[0] != "Z" {
+		t.Errorf("expected ten recorded misses, got %+v", s.Wrong)
 	}
 }
 
@@ -213,8 +200,30 @@ func TestGuess_AllLettersWin(t *testing.T) {
 	}
 
 	s := decodeState(t, last)
-	if s.Status != "won" || s.TriesLeft != MaxTries {
+	if s.Status != "won" || len(s.Wrong) != 0 {
 		t.Errorf("expected a clean win, got %+v", s)
+	}
+}
+
+func TestGuess_ManyMissesFlagsForReview(t *testing.T) {
+	h := setupGames(t)
+	startRound(t, h, "ann", testRound)
+
+	// six misses — one over the review threshold
+	for _, l := range []string{"Z", "Q", "J", "X", "V", "W"} {
+		guessLetter(h, "ann", l)
+	}
+	var last *httptest.ResponseRecorder
+	for _, l := range strings.Split("TRAINBKMUSCLOP", "") {
+		last = guessLetter(h, "ann", l)
+	}
+
+	s := decodeState(t, last)
+	if s.Status != "lost" {
+		t.Errorf("expected the round flagged for review, got %+v", s)
+	}
+	if strings.Join(s.Pairs[0].English, "") != "TRAIN" {
+		t.Errorf("expected TRAIN fully revealed, got %+v", s.Pairs[0])
 	}
 }
 
@@ -246,6 +255,47 @@ func TestGuess_AfterGameOver(t *testing.T) {
 	finishRound(t, h, "ann", testRound, "won")
 
 	if rec := guessLetter(h, "ann", "A"); rec.Code != http.StatusConflict {
+		t.Errorf("expected 409, got %d", rec.Code)
+	}
+}
+
+func TestRetry_RepeatsTheSameWords(t *testing.T) {
+	h := setupGames(t)
+	old := startRound(t, h, "ann", testRound)
+	if _, err := h.DB.Exec("UPDATE games SET status = 'lost' WHERE id = $1", old); err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	h.Retry(rec, asUser("ann", "POST", "/game/retry", ""))
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", rec.Code)
+	}
+	s := decodeState(t, rec)
+	if s.ID == old || s.Status != "playing" || len(s.Guessed) != 0 {
+		t.Errorf("expected a fresh retry round, got %+v", s)
+	}
+	for i, p := range s.Pairs {
+		if p.Italian != testRound[i] {
+			t.Errorf("pair %d: expected %q, got %q", i, testRound[i], p.Italian)
+		}
+		for _, l := range p.English {
+			if l != "" {
+				t.Errorf("letter leaked in a retry round: %+v", p)
+			}
+		}
+	}
+}
+
+func TestRetry_WhilePlaying(t *testing.T) {
+	h := setupGames(t)
+	startRound(t, h, "ann", testRound)
+
+	rec := httptest.NewRecorder()
+	h.Retry(rec, asUser("ann", "POST", "/game/retry", ""))
+
+	if rec.Code != http.StatusConflict {
 		t.Errorf("expected 409, got %d", rec.Code)
 	}
 }
