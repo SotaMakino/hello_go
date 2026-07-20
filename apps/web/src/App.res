@@ -1,6 +1,15 @@
 %%raw(`import "./App.css"`)
 
-type todo = {id: int, title: string}
+type guess = {word: string, result: array<string>}
+
+type game = {
+  id: int,
+  status: string, // "playing" | "won" | "lost"
+  guesses: array<guess>,
+  maxGuesses: int,
+  wordLength: int,
+  word: option<string>, // present only once the game is over
+}
 
 // celebration fireworks: staggered bursts of randomized particles
 type particle = {
@@ -39,72 +48,47 @@ let makeBurst = (x, y, scale, key) => {
   {x, y, key, particles}
 }
 
-type rect = {left: float, top: float, width: float, height: float}
-@send external getBoundingClientRect: Dom.element => rect = "getBoundingClientRect"
+@val @scope("window") external innerWidth: int = "innerWidth"
+@val @scope("window") external innerHeight: int = "innerHeight"
+
+type keyboardEvent
+@get external eventKey: keyboardEvent => string = "key"
+@get external ctrlKey: keyboardEvent => bool = "ctrlKey"
+@get external metaKey: keyboardEvent => bool = "metaKey"
+@get external altKey: keyboardEvent => bool = "altKey"
+@val @scope("document")
+external addKeyListener: (string, keyboardEvent => unit) => unit = "addEventListener"
+@val @scope("document")
+external removeKeyListener: (string, keyboardEvent => unit) => unit = "removeEventListener"
+
+let keyboardRows = [
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BACK"],
+]
+
+// higher wins when a letter earned different feedback across guesses
+let rank = s =>
+  switch s {
+  | "correct" => 3
+  | "present" => 2
+  | "absent" => 1
+  | _ => 0
+  }
 
 @react.component
 let make = () => {
   let (authed, setAuthed) = React.useState(() => None) // None = still checking
-  let (todos, setTodos) = React.useState(() => [])
-  let (title, setTitle) = React.useState(() => "")
+  let (game, setGame) = React.useState(() => None)
+  let (current, setCurrent) = React.useState(() => "")
   let (error, setError) = React.useState(() => "")
-  let (fieldError, setFieldError) = React.useState(() => "") // client-side validation
+  let (notice, setNotice) = React.useState(() => "") // rejected guess, transient
   let (busy, setBusy) = React.useState(() => false)
   let (bursts, setBursts) = React.useState(() => [])
 
-  let loadTodos = async () => {
-    setError(_ => "")
-    switch await ApiClient.request("/todos") {
-    | Ok(res) => {
-        let fetched: array<todo> = await ApiClient.json(res)
-        setTodos(_ => fetched)
-        setAuthed(_ => Some(true))
-      }
-    | Error(err) if err.status == 401 => setAuthed(_ => Some(false))
-    | Error(err) => setError(_ => `Failed to load todos: ${err.message}`)
-    }
-  }
-
-  React.useEffect0(() => {
-    loadTodos()->ignore
-    None
-  })
-
-  let addTodo = async e => {
-    ReactEvent.Form.preventDefault(e)
-    let trimmed = title->Js.String2.trim
-    let isDuplicate =
-      todos->Belt.Array.some(t =>
-        t.title->Js.String2.toLowerCase == trimmed->Js.String2.toLowerCase
-      )
-    if trimmed == "" {
-      setFieldError(_ => "A todo cannot be empty.")
-    } else if isDuplicate {
-      setFieldError(_ => `"${trimmed}" is already on your list.`)
-    } else {
-      setBusy(_ => true)
-      switch await ApiClient.request("/todos", ~method_="POST", ~body={"title": trimmed}) {
-      | Ok(_) => {
-          setTitle(_ => "")
-          await loadTodos()
-        }
-      | Error(err) => setError(_ => `Failed to add todo: ${err.message}`)
-      }
-      setBusy(_ => false)
-    }
-  }
-
-  let celebrate = (e: ReactEvent.Mouse.t) => {
-    let x = e->ReactEvent.Mouse.clientX
-    let y = e->ReactEvent.Mouse.clientY
-    // keyboard activation fires a click at 0,0 — burst from the button instead
-    let (x, y) = if x == 0 && y == 0 {
-      let button: Dom.element = e->ReactEvent.Mouse.currentTarget->Obj.magic
-      let r = button->getBoundingClientRect
-      (Belt.Float.toInt(r.left +. r.width /. 2.0), Belt.Float.toInt(r.top +. r.height /. 2.0))
-    } else {
-      (x, y)
-    }
+  let celebrate = () => {
+    let x = innerWidth / 2
+    let y = innerHeight / 3
     let base = Js.Date.now()->Belt.Float.toInt
     // a small finale: main burst, then two smaller ones off to the sides
     let fire = (offsetX, offsetY, scale, afterMs, index) => {
@@ -124,12 +108,99 @@ let make = () => {
     fire(70, -65, 0.9, 340, 2)
   }
 
-  let deleteTodo = async (todo: todo) => {
-    switch await ApiClient.request(`/todos/${todo.id->Belt.Int.toString}`, ~method_="DELETE") {
-    | Ok(_) => await loadTodos()
-    | Error(err) => setError(_ => `Failed to delete todo: ${err.message}`)
+  let loadGame = async () => {
+    setError(_ => "")
+    switch await ApiClient.request("/game") {
+    | Ok(res) => {
+        let fetched: game = await ApiClient.json(res)
+        setGame(_ => Some(fetched))
+        setAuthed(_ => Some(true))
+      }
+    | Error(err) if err.status == 401 => setAuthed(_ => Some(false))
+    | Error(err) => setError(_ => `Failed to load the game: ${err.message}`)
     }
   }
+
+  React.useEffect0(() => {
+    loadGame()->ignore
+    None
+  })
+
+  let submitGuess = async () => {
+    switch game {
+    | Some(g) if g.status == "playing" && !busy =>
+      if current->Js.String2.length < g.wordLength {
+        setNotice(_ => "Not enough letters.")
+      } else {
+        setBusy(_ => true)
+        switch await ApiClient.request("/game/guess", ~method_="POST", ~body={"guess": current}) {
+        | Ok(res) => {
+            let updated: game = await ApiClient.json(res)
+            setGame(_ => Some(updated))
+            setCurrent(_ => "")
+            if updated.status == "won" {
+              celebrate()
+            }
+          }
+        | Error(err) if err.status == 401 => setAuthed(_ => Some(false))
+        | Error(err) if err.status == 400 || err.status == 409 => setNotice(_ => err.message)
+        | Error(err) => setError(_ => `Failed to submit the guess: ${err.message}`)
+        }
+        setBusy(_ => false)
+      }
+    | _ => ()
+    }
+  }
+
+  let newGame = async () => {
+    setBusy(_ => true)
+    setNotice(_ => "")
+    switch await ApiClient.request("/game", ~method_="POST") {
+    | Ok(res) => {
+        let fetched: game = await ApiClient.json(res)
+        setGame(_ => Some(fetched))
+        setCurrent(_ => "")
+      }
+    | Error(err) if err.status == 401 => setAuthed(_ => Some(false))
+    | Error(err) => setError(_ => `Failed to start a new game: ${err.message}`)
+    }
+    setBusy(_ => false)
+  }
+
+  let handleKey = k => {
+    switch game {
+    | Some(g) if g.status == "playing" && !busy =>
+      if k == "Enter" {
+        submitGuess()->ignore
+      } else if k == "Backspace" {
+        setNotice(_ => "")
+        setCurrent(c => c->Js.String2.slice(~from=0, ~to_=c->Js.String2.length - 1))
+      } else if k->Js.String2.length == 1 && %re("/^[a-z]$/i")->Js.Re.test_(k) {
+        setNotice(_ => "")
+        setCurrent(c => c->Js.String2.length < g.wordLength ? c ++ k->Js.String2.toUpperCase : c)
+      }
+    | _ => ()
+    }
+  }
+
+  // the physical keyboard listener mounts once, so route events through a ref
+  // that always points at the latest render's handler
+  let handleKeyRef = React.useRef(handleKey)
+  handleKeyRef.current = handleKey
+
+  React.useEffect1(() => {
+    switch authed {
+    | Some(true) => {
+        let listener = e =>
+          if !(e->ctrlKey) && !(e->metaKey) && !(e->altKey) {
+            handleKeyRef.current(e->eventKey)
+          }
+        addKeyListener("keydown", listener)
+        Some(() => removeKeyListener("keydown", listener))
+      }
+    | _ => None
+    }
+  }, [authed])
 
   let handleLogout = async () => {
     // even if the server is unreachable, drop back to the login screen
@@ -149,59 +220,127 @@ let make = () => {
         </main>
       : <main className="app">
           <p className="error" role="alert"> {React.string(error)} </p>
-          <button type_="button" className="primary" onClick={_ => loadTodos()->ignore}>
+          <button type_="button" className="primary" onClick={_ => loadGame()->ignore}>
             {React.string("Retry")}
           </button>
         </main>
   | Some(false) =>
     <main className="app">
-      <AuthForm onSuccess={() => loadTodos()->ignore} />
+      <AuthForm onSuccess={() => loadGame()->ignore} />
     </main>
   | Some(true) =>
     <main className="app">
       <header className="app-header">
-        <h1> {React.string("My todos")} </h1>
+        <div>
+          <h1> {React.string("Parole")} </h1>
+          <p className="tagline"> {React.string("Guess the Italian word in 6 tries")} </p>
+        </div>
         <button type_="button" className="ghost" onClick={_ => handleLogout()->ignore}>
           {React.string("Log out")}
         </button>
       </header>
       {error == "" ? React.null : <p className="error" role="alert"> {React.string(error)} </p>}
-      <form className="add-form" onSubmit={e => addTodo(e)->ignore}>
-        <input
-          value=title
-          onChange={e => {
-            let value = ReactEvent.Form.target(e)["value"]
-            setTitle(_ => value)
-            setFieldError(_ => "")
-          }}
-          placeholder="What needs doing?"
-          ariaLabel="New todo"
-        />
-        <button type_="submit" className="primary" disabled=busy> {React.string("Add")} </button>
-      </form>
-      {fieldError == ""
-        ? React.null
-        : <p className="field-error" role="alert"> {React.string(fieldError)} </p>}
-      {todos->Belt.Array.length == 0
-        ? <p className="empty"> {React.string("Nothing to do. Add your first todo above.")} </p>
-        : <ul className="todo-list">
-            {todos
-            ->Belt.Array.map(t =>
-              <li key={t.id->Belt.Int.toString} className="todo-row">
-                <span className="todo-title"> {React.string(t.title)} </span>
-                <button
-                  type_="button"
-                  className="ghost small"
-                  onClick={e => {
-                    celebrate(e)
-                    deleteTodo(t)->ignore
-                  }}>
-                  {React.string("Done")}
-                </button>
-              </li>
+      {switch game {
+      | None => React.null
+      | Some(g) => {
+          let submitted =
+            g.guesses->Belt.Array.map(gu =>
+              Belt.Array.makeBy(g.wordLength, i => (
+                gu.word->Js.String2.charAt(i),
+                "tile " ++ gu.result->Belt.Array.get(i)->Belt.Option.getWithDefault("absent"),
+              ))
             )
-            ->React.array}
-          </ul>}
+          let currentRow =
+            g.status == "playing"
+              ? [
+                  Belt.Array.makeBy(g.wordLength, i => {
+                    let ch = current->Js.String2.charAt(i)
+                    (ch, ch == "" ? "tile" : "tile filled")
+                  }),
+                ]
+              : []
+          let filled = Belt.Array.concat(submitted, currentRow)
+          let empty = Belt.Array.makeBy(
+            Js.Math.max_int(0, g.maxGuesses - filled->Belt.Array.length),
+            _ => Belt.Array.makeBy(g.wordLength, _ => ("", "tile")),
+          )
+          let letterStatuses = {
+            let m = Js.Dict.empty()
+            g.guesses->Belt.Array.forEach(gu =>
+              gu.result->Belt.Array.forEachWithIndex((i, r) => {
+                let letter = gu.word->Js.String2.charAt(i)
+                let prev = m->Js.Dict.get(letter)->Belt.Option.getWithDefault("")
+                if rank(r) > rank(prev) {
+                  m->Js.Dict.set(letter, r)
+                }
+              })
+            )
+            m
+          }
+          <>
+            <div className="board" ariaLabel="Game board">
+              {Belt.Array.concat(filled, empty)
+              ->Belt.Array.mapWithIndex((ri, row) =>
+                <div key={ri->Belt.Int.toString} className="board-row">
+                  {row
+                  ->Belt.Array.mapWithIndex((ti, (letter, cls)) =>
+                    <div key={ti->Belt.Int.toString} className=cls> {React.string(letter)} </div>
+                  )
+                  ->React.array}
+                </div>
+              )
+              ->React.array}
+            </div>
+            {notice == ""
+              ? React.null
+              : <p className="notice" role="alert"> {React.string(notice)} </p>}
+            {g.status == "playing"
+              ? React.null
+              : <div className="banner">
+                  <p>
+                    {React.string(
+                      g.status == "won"
+                        ? "Bravo! You guessed it."
+                        : `The word was ${g.word->Belt.Option.getWithDefault("")}.`,
+                    )}
+                  </p>
+                  <button
+                    type_="button"
+                    className="primary"
+                    disabled=busy
+                    onClick={_ => newGame()->ignore}>
+                    {React.string("New game")}
+                  </button>
+                </div>}
+            <div className="keyboard">
+              {keyboardRows
+              ->Belt.Array.mapWithIndex((ri, row) =>
+                <div key={ri->Belt.Int.toString} className="kb-row">
+                  {row
+                  ->Belt.Array.map(k => {
+                    let (label, keyValue, cls) = switch k {
+                    | "ENTER" => ("Enter", "Enter", "key wide")
+                    | "BACK" => ("⌫", "Backspace", "key wide")
+                    | letter => (
+                        letter,
+                        letter,
+                        letterStatuses
+                        ->Js.Dict.get(letter)
+                        ->Belt.Option.mapWithDefault("key", s => "key " ++ s),
+                      )
+                    }
+                    <button key=k type_="button" className=cls onClick={_ => handleKey(keyValue)}>
+                      {React.string(label)}
+                    </button>
+                  })
+                  ->React.array}
+                </div>
+              )
+              ->React.array}
+            </div>
+          </>
+        }
+      }}
       {bursts
       ->Belt.Array.map(b =>
         <div

@@ -98,51 +98,163 @@
   box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
-.add-form {
+.tagline {
+  font-size: 14px;
+  margin: 0.15rem 0 0;
+}
+
+/* --- Board --- */
+
+.board {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  flex-direction: column;
+  gap: 6px;
+  width: max-content;
+  margin: 1.5rem auto 0;
 }
 
-.add-form input {
-  flex: 1;
-  min-width: 0;
+.board-row {
+  display: flex;
+  gap: 6px;
 }
 
-/* --- Todo list --- */
+.tile {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-h);
+  transition: transform 0.08s, background 0.15s, border-color 0.15s;
+}
 
-.todo-list {
-  list-style: none;
-  margin: 1rem 0 0;
+.tile.filled {
+  border-color: var(--accent-border);
+  transform: scale(1.04);
+}
+
+.tile.correct {
+  background: #538d4e;
+  border-color: #538d4e;
+  color: #fff;
+}
+
+.tile.present {
+  background: #b59f3b;
+  border-color: #b59f3b;
+  color: #fff;
+}
+
+.tile.absent {
+  background: #787c7e;
+  border-color: #787c7e;
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .tile {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+}
+
+/* --- Keyboard --- */
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 1.5rem;
+}
+
+.kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.key {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 52px;
+  flex: 0 1 42px;
+  min-width: 30px;
   padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+
+.key:hover {
+  filter: brightness(0.92);
+}
+
+.key.wide {
+  flex: 0 1 68px;
+  min-width: 52px;
+  font-size: 12px;
+}
+
+.key.correct {
+  background: #538d4e;
+  color: #fff;
+}
+
+.key.present {
+  background: #b59f3b;
+  color: #fff;
+}
+
+.key.absent {
+  background: #787c7e;
+  color: #fff;
+  opacity: 0.65;
+}
+
+@media (prefers-color-scheme: dark) {
+  .tile.absent,
+  .key.absent {
+    background: #3a3a3c;
+    border-color: #3a3a3c;
+  }
+}
+
+/* --- Notice & end-of-game banner --- */
+
+.notice {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-h);
+  margin: 0.75rem 0 0;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem auto 0;
+  padding: 0.75rem 1.25rem;
+  width: max-content;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--border);
   border-radius: 12px;
-  overflow: hidden;
   background: var(--bg);
 }
 
-.todo-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0.9rem;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
-}
-
-.todo-row:last-child {
-  border-bottom: none;
-}
-
-.todo-row:hover {
-  background: var(--accent-bg);
-}
-
-.todo-title {
-  flex: 1;
-  min-width: 0;
+.banner p {
   color: var(--text-h);
-  overflow-wrap: anywhere;
+  font-weight: 500;
 }
 
 /* --- States --- */
