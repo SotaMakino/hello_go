@@ -1,9 +1,16 @@
 # hello-go
 
-Bun monorepo: **Parole**, a Wordle clone with Italian five-letter words, built as
-a Go REST API plus a Vite + ReScript (React) client. Each user gets their own
-games behind cookie-session auth; guesses are scored server-side so the answer
-never reaches the browser until the game is over.
+Bun monorepo: **Parole**, a Wordle-style trainer for beginner Italian
+vocabulary, built as a Go REST API plus a Vite + ReScript (React) client. Each
+round shows an English clue and you type the Italian five-letter word in five
+tries with Wordle feedback. It leans on research-backed techniques: retrieval
+practice (you recall the word from its meaning), cognates first (the curriculum
+starts with Italian words an English speaker can almost guess), immediate
+feedback, and spaced repetition (missed words return three rounds later).
+
+Each user gets their own progress behind cookie-session auth; guesses are
+scored server-side so the answer never reaches the browser until the game is
+over.
 
 ```
 apps/
@@ -44,14 +51,17 @@ Runs on http://localhost:8080. Environment variables:
 Endpoints: `POST /signup`, `POST /login`, `POST /logout` (public), and — with a
 session cookie, scoped to the logged-in user:
 
-- `GET /game` — current game state (starts one if the user has none)
+- `GET /game` — current game state, including the English clue (starts a game
+  if the user has none)
 - `POST /game` — new game, once the current one is won or lost
 - `POST /game/guess` — submit `{"guess": "fiore"}`; the response scores each
   letter as `correct` / `present` / `absent` and reveals the answer only when
   the game ends
 
-The answer pool and guess dictionary are the embedded Italian word list in
-`apps/api/handlers/words.go`.
+The curriculum (Italian word + English clue, cognates first) lives in
+`apps/api/handlers/words.go` and doubles as the guess dictionary. New games
+pick the next word server-side: a word lost at least three rounds ago comes
+back for review, otherwise the first not-yet-played word in curriculum order.
 
 ## Run the client (web)
 
