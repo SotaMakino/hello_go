@@ -143,7 +143,10 @@ let make = () => {
             }
           }
         | Error(err) if err.status == 401 => setAuthed(_ => Some(false))
-        | Error(err) if err.status == 400 || err.status == 409 => setNotice(_ => err.message)
+        | Error(err) if err.status == 400 || err.status == 409 =>
+          // the raw server hint ("not in the word list") reads better in a game
+          // notice than the full "HTTP 400: …" string
+          setNotice(_ => err.message->Js.String2.replaceByRe(%re("/^HTTP \d+: /"), ""))
         | Error(err) => setError(_ => `Failed to submit the guess: ${err.message}`)
         }
         setBusy(_ => false)
