@@ -7,6 +7,7 @@
     "dev:api": "cd apps/api && go run .",
     "dev:web": "cd apps/web && bun run dev",
     "test:api": "cd apps/api && go test ./...",
+    "test:web": "cd apps/web && bun run test",
     "build:web": "cd apps/web && bun run build"
   }
 }
