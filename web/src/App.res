@@ -295,6 +295,16 @@ let make = () => {
     None
   })
 
+  // initial load failed: auto-retry every 5s instead of asking the user to click
+  React.useEffect2(() => {
+    switch game {
+    | None if error != "" =>
+      let id = Js.Global.setTimeout(() => loadGame()->ignore, 5000)
+      Some(() => Js.Global.clearTimeout(id))
+    | _ => None
+    }
+  }, (game, error))
+
   let (selected, setSelected) = React.useState(() => "") // letter picked from the keyboard
 
   // place one letter on one exact tile
@@ -412,10 +422,7 @@ let make = () => {
           </div>
         </main>
       : <main className="app">
-          <p className="error" role="alert"> {React.string(error)} </p>
-          <button type_="button" className="primary" onClick={_ => loadGame()->ignore}>
-            {React.string(tr.retry)}
-          </button>
+          <p className="error" role="alert"> {React.string(tr.serverWeak)} </p>
         </main>
   | Some(g) =>
     <main className="app">
