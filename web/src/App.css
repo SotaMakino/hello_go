@@ -182,7 +182,15 @@
   visibility: hidden;
 }
 
-/* language flags flanking the tagline; the inactive one is dimmed */
+/* flags flank the wordmark on the left and right of the title row */
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+/* language flags flanking the title; the inactive one is dimmed */
 .flag {
   flex-shrink: 0;
   background: none;
