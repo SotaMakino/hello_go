@@ -66,6 +66,34 @@ let keyboardRows = [
   ["Z", "X", "C", "V", "B", "N", "M"],
 ]
 
+// every revealed occurrence of a letter shares that letter's color
+let letterColors = [
+  "#aa3bff",
+  "#f59e0b",
+  "#ef4444",
+  "#22c55e",
+  "#06b6d4",
+  "#ec4899",
+  "#8b5cf6",
+  "#14b8a6",
+  "#f97316",
+  "#3b82f6",
+  "#84cc16",
+  "#e11d48",
+  "#0ea5e9",
+]
+
+let colorFor = letter => {
+  let code = letter->Js.String2.charCodeAt(0)->Belt.Float.toInt
+  letterColors->Belt.Array.getExn(mod(code - 65, Belt.Array.length(letterColors)))
+}
+
+// HTML5 drag&drop: Firefox refuses to drag without setData, and the letter
+// itself travels in a ref so the drop handler can read it synchronously
+type dataTransfer
+@get external dataTransfer: ReactEvent.Mouse.t => dataTransfer = "dataTransfer"
+@send external setData: (dataTransfer, string, string) => unit = "setData"
+
 @react.component
 let make = () => {
   let (authed, setAuthed) = React.useState(() => None) // None = still checking
@@ -164,6 +192,8 @@ let make = () => {
     }
   }
 
+  let dragged = React.useRef("")
+
   // the physical keyboard listener mounts once, so route events through a ref
   // that always points at the latest render's handler
   let handleKeyRef = React.useRef(handleKey)
@@ -215,7 +245,9 @@ let make = () => {
         <div>
           <h1> {React.string("Parole")} </h1>
           <p className="tagline">
-            {React.string("Type letters to reveal the English word for each Italian one")}
+            {React.string(
+              "Type, tap, or drag letters to reveal the English word for each Italian one",
+            )}
           </p>
         </div>
         <button type_="button" className="ghost" onClick={_ => handleLogout()->ignore}>
@@ -227,7 +259,19 @@ let make = () => {
       | None => React.null
       | Some(g) =>
         <>
-          <div className="pairs">
+          <div
+            className="pairs"
+            onDragOver={e => ReactEvent.Mouse.preventDefault(e)}
+            onDrop={e => {
+              ReactEvent.Mouse.preventDefault(e)
+              switch dragged.current {
+              | "" => ()
+              | l => {
+                  dragged.current = ""
+                  submitLetter(l)->ignore
+                }
+              }
+            }}>
             {g.pairs
             ->Belt.Array.map(p =>
               <div key=p.italian className="pair-row">
@@ -235,10 +279,14 @@ let make = () => {
                 <div className="english-tiles">
                   {p.english
                   ->Belt.Array.mapWithIndex((i, letter) =>
-                    <div
-                      key={i->Belt.Int.toString} className={letter == "" ? "tile" : "tile correct"}>
-                      {React.string(letter)}
-                    </div>
+                    letter == ""
+                      ? <div key={i->Belt.Int.toString} className="tile" />
+                      : <div
+                          key={i->Belt.Int.toString}
+                          className="tile revealed"
+                          style={{backgroundColor: colorFor(letter)}}>
+                          {React.string(letter)}
+                        </div>
                   )
                   ->React.array}
                 </div>
@@ -255,11 +303,11 @@ let make = () => {
               ? <span className="typed-empty"> {React.string("no letters yet")} </span>
               : g.guessed
                 ->Belt.Array.map(l =>
-                  <span
-                    key=l
-                    className={g.wrong->Belt.Array.some(w => w == l) ? "chip miss" : "chip hit"}>
-                    {React.string(l)}
-                  </span>
+                  g.wrong->Belt.Array.some(w => w == l)
+                    ? <span key=l className="chip miss"> {React.string(l)} </span>
+                    : <span key=l className="chip hit" style={{backgroundColor: colorFor(l)}}>
+                        {React.string(l)}
+                      </span>
                 )
                 ->React.array}
           </div>
@@ -271,9 +319,10 @@ let make = () => {
                 ->Belt.Array.map(letter => {
                   let tried = g.guessed->Belt.Array.some(l => l == letter)
                   let missed = g.wrong->Belt.Array.some(l => l == letter)
+                  // a hit "moves" to the board: its key leaves the keyboard
                   let cls = switch (tried, missed) {
                   | (true, true) => "key absent"
-                  | (true, false) => "key correct"
+                  | (true, false) => "key used"
                   | _ => "key"
                   }
                   <button
@@ -281,6 +330,11 @@ let make = () => {
                     type_="button"
                     className=cls
                     disabled=tried
+                    draggable={!tried && g.status == "playing"}
+                    onDragStart={e => {
+                      e->dataTransfer->setData("text/plain", letter)
+                      dragged.current = letter
+                    }}
                     onClick={_ => submitLetter(letter)->ignore}>
                     {React.string(letter)}
                   </button>

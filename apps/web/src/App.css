@@ -150,9 +150,8 @@
   transition: background 0.15s, border-color 0.15s;
 }
 
-.tile.correct {
-  background: #538d4e;
-  border-color: #538d4e;
+.tile.revealed {
+  border-color: transparent;
   color: #fff;
 }
 
@@ -211,10 +210,6 @@
   color: #fff;
 }
 
-.chip.hit {
-  background: #538d4e;
-}
-
 .chip.miss {
   background: #787c7e;
   opacity: 0.75;
@@ -261,13 +256,17 @@
   filter: brightness(0.92);
 }
 
+.key:enabled {
+  cursor: grab;
+}
+
 .key:disabled {
   cursor: default;
 }
 
-.key.correct {
-  background: #538d4e;
-  color: #fff;
+/* a key whose letter was found: it has moved onto the board */
+.key.used {
+  visibility: hidden;
 }
 
 .key.absent {
