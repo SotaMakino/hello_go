@@ -545,3 +545,51 @@
     opacity: 0;
   }
 }
+
+/* --- Newspaper edition: print-style overrides --- */
+
+.app-header {
+  border-bottom: 4px double var(--text-h);
+  padding-bottom: 0.6rem;
+  align-items: flex-end;
+}
+
+.tagline {
+  font-style: italic;
+}
+
+.notice,
+.typed-empty {
+  font-style: italic;
+}
+
+.tries-label,
+.typed-label {
+  font-family: var(--sans);
+  letter-spacing: 2px;
+}
+
+/* sharp corners, like things set in print */
+.primary,
+.ghost,
+.app input,
+.auth input,
+.auth,
+.tile,
+.key,
+.chip,
+.banner,
+.error,
+.empty {
+  border-radius: 0;
+}
+
+.key {
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.try-dot.spent {
+  background: var(--accent);
+  border-color: var(--accent);
+}
