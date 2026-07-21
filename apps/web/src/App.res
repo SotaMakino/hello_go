@@ -277,116 +277,141 @@ let make = () => {
       {error == "" ? React.null : <p className="error" role="alert"> {React.string(error)} </p>}
       {switch game {
       | None => React.null
-      | Some(g) =>
-        <>
-          <div className="pairs">
-            {g.pairs
-            ->Belt.Array.mapWithIndex((wi, p) =>
-              <div key=p.italian className="pair-row">
-                <span className="italian"> {React.string(p.italian)} </span>
-                <div className="english-tiles">
-                  {p.english
-                  ->Belt.Array.mapWithIndex((i, letter) =>
-                    letter == ""
-                      ? <div
+      | Some(g) => {
+          // a hit reveals a letter everywhere at once, so counting revealed
+          // tiles gives each letter's true number of occurrences
+          let letterCounts = {
+            let m = Js.Dict.empty()
+            g.pairs->Belt.Array.forEach(p =>
+              p.english->Belt.Array.forEach(l =>
+                if l != "" {
+                  m->Js.Dict.set(l, m->Js.Dict.get(l)->Belt.Option.getWithDefault(0) + 1)
+                }
+              )
+            )
+            m
+          }
+          // colors mark characters that repeat; a one-off letter stays gray
+          let tileColor = letter =>
+            letterCounts->Js.Dict.get(letter)->Belt.Option.getWithDefault(0) > 1
+              ? colorFor(letter)
+              : "#787c7e"
+          <>
+            <div className="pairs">
+              {g.pairs
+              ->Belt.Array.mapWithIndex((wi, p) =>
+                <div key=p.italian className="pair-row">
+                  <span className="italian"> {React.string(p.italian)} </span>
+                  <div className="english-tiles">
+                    {p.english
+                    ->Belt.Array.mapWithIndex((i, letter) =>
+                      letter == ""
+                        ? <div
+                            key={i->Belt.Int.toString}
+                            className="tile open"
+                            onDragOver={e => ReactEvent.Mouse.preventDefault(e)}
+                            onDrop={e => {
+                              ReactEvent.Mouse.preventDefault(e)
+                              let l = dragged.current
+                              dragged.current = ""
+                              placeLetter(l, wi, i)->ignore
+                            }}
+                            onClick={_ => placeLetter(selected, wi, i)->ignore}
+                          />
+                        : <div
+                            key={i->Belt.Int.toString}
+                            className="tile revealed"
+                            style={{backgroundColor: tileColor(letter)}}>
+                            {React.string(letter)}
+                          </div>
+                    )
+                    ->React.array}
+                  </div>
+                </div>
+              )
+              ->React.array}
+            </div>
+            {notice == ""
+              ? React.null
+              : <p className="notice" role="alert"> {React.string(notice)} </p>}
+            <div className="typed">
+              <span className="typed-label"> {React.string("Typed")} </span>
+              {g.guessed->Belt.Array.length == 0
+                ? <span className="typed-empty"> {React.string("no letters yet")} </span>
+                : g.guessed
+                  ->Belt.Array.mapWithIndex((i, l) =>
+                    g.results->Belt.Array.get(i)->Belt.Option.getWithDefault(false)
+                      ? <span
                           key={i->Belt.Int.toString}
-                          className="tile open"
-                          onDragOver={e => ReactEvent.Mouse.preventDefault(e)}
-                          onDrop={e => {
-                            ReactEvent.Mouse.preventDefault(e)
-                            let l = dragged.current
-                            dragged.current = ""
-                            placeLetter(l, wi, i)->ignore
-                          }}
-                          onClick={_ => placeLetter(selected, wi, i)->ignore}
-                        />
-                      : <div
-                          key={i->Belt.Int.toString}
-                          className="tile revealed"
-                          style={{backgroundColor: colorFor(letter)}}>
-                          {React.string(letter)}
-                        </div>
+                          className="chip hit"
+                          style={{backgroundColor: tileColor(l)}}>
+                          {React.string(l)}
+                        </span>
+                      : <span key={i->Belt.Int.toString} className="chip miss">
+                          {React.string(l)}
+                        </span>
                   )
                   ->React.array}
+            </div>
+            <div className="keyboard">
+              {keyboardRows
+              ->Belt.Array.mapWithIndex((ri, row) =>
+                <div key={ri->Belt.Int.toString} className="kb-row">
+                  {row
+                  ->Belt.Array.map(letter => {
+                    // a fully placed letter leaves the keyboard for the board
+                    let usedUp = g.usedUp->Belt.Array.some(l => l == letter)
+                    let cls = switch (usedUp, selected == letter) {
+                    | (true, _) => "key used"
+                    | (false, true) => "key selected"
+                    | _ => "key"
+                    }
+                    <button
+                      key=letter
+                      type_="button"
+                      className=cls
+                      disabled=usedUp
+                      draggable={!usedUp && g.status == "playing"}
+                      onDragStart={e => {
+                        e->dataTransfer->setData("text/plain", letter)
+                        dragged.current = letter
+                      }}
+                      onClick={_ => setSelected(s => s == letter ? "" : letter)}>
+                      {React.string(letter)}
+                    </button>
+                  })
+                  ->React.array}
                 </div>
-              </div>
-            )
-            ->React.array}
-          </div>
-          {notice == ""
-            ? React.null
-            : <p className="notice" role="alert"> {React.string(notice)} </p>}
-          <div className="typed">
-            <span className="typed-label"> {React.string("Typed")} </span>
-            {g.guessed->Belt.Array.length == 0
-              ? <span className="typed-empty"> {React.string("no letters yet")} </span>
-              : g.guessed
-                ->Belt.Array.mapWithIndex((i, l) =>
-                  g.results->Belt.Array.get(i)->Belt.Option.getWithDefault(false)
-                    ? <span
-                        key={i->Belt.Int.toString}
-                        className="chip hit"
-                        style={{backgroundColor: colorFor(l)}}>
-                        {React.string(l)}
-                      </span>
-                    : <span key={i->Belt.Int.toString} className="chip miss">
-                        {React.string(l)}
-                      </span>
-                )
-                ->React.array}
-          </div>
-          <div className="keyboard">
-            {keyboardRows
-            ->Belt.Array.mapWithIndex((ri, row) =>
-              <div key={ri->Belt.Int.toString} className="kb-row">
-                {row
-                ->Belt.Array.map(letter => {
-                  // a fully placed letter leaves the keyboard for the board
-                  let usedUp = g.usedUp->Belt.Array.some(l => l == letter)
-                  let cls = switch (usedUp, selected == letter) {
-                  | (true, _) => "key used"
-                  | (false, true) => "key selected"
-                  | _ => "key"
-                  }
+              )
+              ->React.array}
+            </div>
+            {g.status == "playing"
+              ? React.null
+              : <div className="banner">
+                  <p>
+                    {React.string(
+                      g.status == "won"
+                        ? "Bravo! You revealed all five words."
+                        : "All revealed — but with more than 5 misses, so these words will come back for review.",
+                    )}
+                  </p>
                   <button
-                    key=letter
                     type_="button"
-                    className=cls
-                    disabled=usedUp
-                    draggable={!usedUp && g.status == "playing"}
-                    onDragStart={e => {
-                      e->dataTransfer->setData("text/plain", letter)
-                      dragged.current = letter
-                    }}
-                    onClick={_ => setSelected(s => s == letter ? "" : letter)}>
-                    {React.string(letter)}
+                    className="ghost"
+                    disabled=busy
+                    onClick={_ => retryGame()->ignore}>
+                    {React.string("Retry")}
                   </button>
-                })
-                ->React.array}
-              </div>
-            )
-            ->React.array}
-          </div>
-          {g.status == "playing"
-            ? React.null
-            : <div className="banner">
-                <p>
-                  {React.string(
-                    g.status == "won"
-                      ? "Bravo! You revealed all five words."
-                      : "All revealed — but with more than 5 misses, so these words will come back for review.",
-                  )}
-                </p>
-                <button
-                  type_="button" className="ghost" disabled=busy onClick={_ => retryGame()->ignore}>
-                  {React.string("Retry")}
-                </button>
-                <button
-                  type_="button" className="primary" disabled=busy onClick={_ => newGame()->ignore}>
-                  {React.string("New game")}
-                </button>
-              </div>}
-        </>
+                  <button
+                    type_="button"
+                    className="primary"
+                    disabled=busy
+                    onClick={_ => newGame()->ignore}>
+                    {React.string("New game")}
+                  </button>
+                </div>}
+          </>
+        }
       }}
       {bursts
       ->Belt.Array.map(b =>
