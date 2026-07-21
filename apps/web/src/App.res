@@ -69,10 +69,10 @@ let keyboardRows = [
   ["Z", "X", "C", "V", "B", "N", "M"],
 ]
 
-// revealed letters: green when the character occurs once, red when it
-// appears multiple times across the round
-let uniqueColor = "#22c55e"
-let repeatedColor = "#ef4444"
+// revealed letters wear the Italian flag: il verde for repeated characters,
+// il rosso for one-off ones (official tricolore values)
+let uniqueColor = "#cd212a" // flag red
+let repeatedColor = "#008c45" // flag green
 
 // HTML5 drag&drop: Firefox refuses to drag without setData, and the letter
 // itself travels in a ref so the drop handler can read it synchronously
