@@ -3,7 +3,9 @@
 Bun monorepo: **Parole**, a letter-reveal trainer for beginner Italian
 vocabulary, built as a Go REST API plus a Vite + ReScript (React) client. Each
 round shows five Italian words on the left with their English translations
-hidden on the right — only the word lengths are visible. Drag a keyboard key
+hidden on the right — only the word lengths are visible. A 🔊 button next to
+each Italian word speaks its pronunciation via the browser's Italian
+text-to-speech voice. Drag a keyboard key
 onto the exact tile where you think that letter goes (or tap the key, then the
 tile): a correct placement opens that tile plus every other occurrence of the
 same character across all five words, and the key leaves the keyboard. A wrong

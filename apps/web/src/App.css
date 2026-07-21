@@ -159,12 +159,31 @@
 }
 
 .italian {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
   text-align: right;
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 1px;
   color: var(--text-h);
   white-space: nowrap;
+}
+
+.speak {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 15px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.speak:hover {
+  opacity: 1;
+  transform: scale(1.12);
 }
 
 .english-tiles {

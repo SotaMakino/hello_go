@@ -97,6 +97,24 @@ type dataTransfer
 @get external dataTransfer: ReactEvent.Mouse.t => dataTransfer = "dataTransfer"
 @send external setData: (dataTransfer, string, string) => unit = "setData"
 
+// browser text-to-speech for Italian pronunciation
+type utterance
+@new external makeUtterance: string => utterance = "SpeechSynthesisUtterance"
+@set external setLang: (utterance, string) => unit = "lang"
+@set external setRate: (utterance, float) => unit = "rate"
+@val @scope(("window", "speechSynthesis"))
+external speak: utterance => unit = "speak"
+@val @scope(("window", "speechSynthesis"))
+external cancelSpeech: unit => unit = "cancel"
+
+let speakItalian = word => {
+  cancelSpeech() // cut off any word still playing
+  let u = makeUtterance(word->Js.String2.toLowerCase)
+  u->setLang("it-IT")
+  u->setRate(0.85) // a touch slower for learners
+  speak(u)
+}
+
 @react.component
 let make = () => {
   let (authed, setAuthed) = React.useState(() => None) // None = still checking
@@ -323,7 +341,17 @@ let make = () => {
               {g.pairs
               ->Belt.Array.mapWithIndex((wi, p) =>
                 <div key=p.italian className="pair-row">
-                  <span className="italian"> {React.string(p.italian)} </span>
+                  <span className="italian">
+                    <button
+                      type_="button"
+                      className="speak"
+                      title={`Pronounce ${p.italian}`}
+                      ariaLabel={`Pronounce ${p.italian}`}
+                      onClick={_ => speakItalian(p.italian)}>
+                      {React.string(`🔊`)}
+                    </button>
+                    {React.string(p.italian)}
+                  </span>
                   <div className="english-tiles">
                     {p.english
                     ->Belt.Array.mapWithIndex((i, letter) =>
