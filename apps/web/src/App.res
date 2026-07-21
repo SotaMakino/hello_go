@@ -10,6 +10,7 @@ type game = {
   results: array<bool>, // parallel to guessed: true = correct placement
   wrong: array<string>,
   usedUp: array<string>, // letters whose every occurrence is on the board
+  maxMisses: int, // wrong placements allowed before the round is lost
 }
 
 // celebration fireworks: staggered bursts of randomized particles
@@ -164,7 +165,14 @@ let make = () => {
             // deselect a letter once its last tile is on the board
             setSelected(s => updated.usedUp->Belt.Array.some(l => l == s) ? "" : s)
             if updated.wrong->Belt.Array.length > g.wrong->Belt.Array.length {
-              setNotice(_ => `No ${letter} there — that costs a miss.`)
+              let left = updated.maxMisses - updated.wrong->Belt.Array.length
+              setNotice(_ =>
+                left > 0
+                  ? `No ${letter} there — ${left->Belt.Int.toString} ${left == 1
+                        ? "try"
+                        : "tries"} left.`
+                  : `No ${letter} there.`
+              )
             }
             if updated.status == "won" {
               celebrate()
@@ -296,7 +304,21 @@ let make = () => {
             letterCounts->Js.Dict.get(letter)->Belt.Option.getWithDefault(0) > 1
               ? colorFor(letter)
               : "#787c7e"
+          let missCount = g.wrong->Belt.Array.length
           <>
+            <div className="tries">
+              <span className="tries-label"> {React.string("Mistakes")} </span>
+              {Belt.Array.makeBy(g.maxMisses, i =>
+                <span
+                  key={i->Belt.Int.toString} className={i < missCount ? "try-dot spent" : "try-dot"}
+                />
+              )->React.array}
+              <span className="tries-count">
+                {React.string(
+                  `${missCount->Belt.Int.toString} / ${g.maxMisses->Belt.Int.toString}`,
+                )}
+              </span>
+            </div>
             <div className="pairs">
               {g.pairs
               ->Belt.Array.mapWithIndex((wi, p) =>
@@ -392,7 +414,7 @@ let make = () => {
                     {React.string(
                       g.status == "won"
                         ? "Bravo! You revealed all five words."
-                        : "All revealed — but with more than 5 misses, so these words will come back for review.",
+                        : "Five mistakes — game over. Study the answers; these words will come back for review.",
                     )}
                   </p>
                   <button

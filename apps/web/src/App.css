@@ -103,6 +103,43 @@
   margin: 0.15rem 0 0;
 }
 
+/* --- Mistakes indicator --- */
+
+.tries {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1.25rem auto 0;
+}
+
+.tries-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.try-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  box-sizing: border-box;
+}
+
+/* a spent dot is a mistake already made */
+.try-dot.spent {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.tries-count {
+  font-size: 13px;
+  color: var(--text-h);
+}
+
 /* --- Word pairs --- */
 
 /* two aligned columns: Italian words right-aligned, English tiles

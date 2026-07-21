@@ -216,26 +216,41 @@ func TestGuess_WrongTileIsAMiss(t *testing.T) {
 	}
 }
 
-func TestGuess_MissesNeverEndTheRound(t *testing.T) {
+func TestGuess_FourMissesKeepPlaying(t *testing.T) {
 	h := setupGames(t)
 	startRound(t, h, "ann", testRound)
 
 	var last *httptest.ResponseRecorder
-	// Z occurs nowhere in the round: ten misses on ten different tiles
-	for i := 0; i < 5; i++ {
+	// Z occurs nowhere in the round: four misses on four different tiles
+	for i := 0; i < 4; i++ {
 		last = place(h, "ann", "Z", 0, i)
 	}
-	for i := 0; i < 4; i++ {
-		last = place(h, "ann", "Z", 1, i)
-	}
-	last = place(h, "ann", "Z", 2, 0)
 
 	s := decodeState(t, last)
 	if s.Status != "playing" {
-		t.Errorf("misses must never end the round, got %+v", s)
+		t.Errorf("four misses must not end the round, got %+v", s)
 	}
-	if len(s.Wrong) != 10 {
-		t.Errorf("expected ten recorded misses, got %+v", s.Wrong)
+	if len(s.Wrong) != 4 || s.MaxMisses != MaxMisses {
+		t.Errorf("expected four recorded misses out of %d, got %+v", MaxMisses, s)
+	}
+}
+
+func TestGuess_FifthMissLoses(t *testing.T) {
+	h := setupGames(t)
+	startRound(t, h, "ann", testRound)
+
+	var last *httptest.ResponseRecorder
+	for i := 0; i < 5; i++ {
+		last = place(h, "ann", "Z", 0, i)
+	}
+
+	s := decodeState(t, last)
+	if s.Status != "lost" {
+		t.Errorf("expected the fifth miss to end the round, got %+v", s)
+	}
+	// the answers are revealed on loss
+	if strings.Join(s.Pairs[0].English, "") != "TRAIN" {
+		t.Errorf("expected TRAIN revealed, got %+v", s.Pairs[0])
 	}
 }
 
@@ -253,19 +268,18 @@ func TestGuess_FillingEveryTileWins(t *testing.T) {
 	}
 }
 
-func TestGuess_ManyMissesFlagsForReview(t *testing.T) {
+func TestGuess_WinDespiteSomeMisses(t *testing.T) {
 	h := setupGames(t)
 	startRound(t, h, "ann", testRound)
 
-	// six misses — one over the review threshold
-	for i := 0; i < 5; i++ {
+	// four misses, then a full solve: still a win
+	for i := 0; i < 4; i++ {
 		place(h, "ann", "Z", 0, i)
 	}
-	place(h, "ann", "Z", 1, 0)
 	s := decodeState(t, solveRound(h, "ann", testRound))
 
-	if s.Status != "lost" {
-		t.Errorf("expected the round flagged for review, got %+v", s)
+	if s.Status != "won" || len(s.Wrong) != 4 {
+		t.Errorf("expected a win with four misses, got %+v", s)
 	}
 }
 

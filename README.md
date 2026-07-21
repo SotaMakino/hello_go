@@ -7,9 +7,9 @@ hidden on the right — only the word lengths are visible. Drag a keyboard key
 onto the exact tile where you think that letter goes (or tap the key, then the
 tile): a correct placement opens that tile plus every other occurrence of the
 same character across all five words, and the key leaves the keyboard. A wrong
-spot is a recorded miss. Misses are unlimited; finish with more than five and
-the round's words are flagged to come back for review — or hit Retry to play
-the same five again.
+spot is a mistake, tracked by an on-screen counter — the fifth mistake ends
+the round. Lost words are flagged to come back for review, and Retry replays
+the same five right away.
 
 It leans on research-backed techniques: retrieval practice (you recall the
 English from the Italian), immediate feedback, and spaced repetition (flagged
@@ -66,9 +66,8 @@ session cookie, scoped to the logged-in user:
 - `POST /game/retry` — replay the just-finished round's five words
 - `POST /game/guess` — place one letter on one tile as
   `{"guess": "a", "word": 0, "position": 2}`; a correct placement reveals
-  every occurrence of that letter, a wrong one is a recorded miss (more than
-  five flags the round for review), and the full answers appear only when
-  the round ends
+  every occurrence of that letter, a wrong one is a mistake (the fifth loses
+  the round), and the full answers appear only when the round ends
 
 The word pool (800+ Italian words with English translations) lives in
 `apps/api/handlers/words.go`. New rounds pick five words server-side: words

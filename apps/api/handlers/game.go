@@ -15,10 +15,9 @@ import (
 
 const (
 	WordsPerRound = 5
-	// misses are unlimited, but finishing with more than this many flags the
-	// round's words for review ("lost")
-	ReviewMisses = 5
-	// a flagged round's words return once this many later rounds have been played
+	// the fifth wrong placement ends the round as lost
+	MaxMisses = 5
+	// a lost round's words return once this many later rounds have been played
 	ReviewGap = 3
 )
 
@@ -43,10 +42,11 @@ type gameState struct {
 	ID      int64    `json:"id"`
 	Status  string   `json:"status"` // "lost" = completed, flagged for review
 	Pairs   []pair   `json:"pairs"`
-	Guessed []string `json:"guessed"` // the letter of every placement tried, in order
-	Results []bool   `json:"results"` // parallel to guessed: true = correct placement
-	Wrong   []string `json:"wrong"`   // the letters of failed placements, in order
-	UsedUp  []string `json:"usedUp"`  // letters whose every occurrence is revealed
+	Guessed   []string `json:"guessed"`   // the letter of every placement tried, in order
+	Results   []bool   `json:"results"`   // parallel to guessed: true = correct placement
+	Wrong     []string `json:"wrong"`     // the letters of failed placements, in order
+	UsedUp    []string `json:"usedUp"`    // letters whose every occurrence is revealed
+	MaxMisses int      `json:"maxMisses"` // wrong placements allowed before losing
 }
 
 func (h *Games) latest(user string) (*game, error) {
@@ -232,13 +232,14 @@ func (h *Games) state(g *game) (gameState, error) {
 		return gameState{}, err
 	}
 	s := gameState{
-		ID:      g.id,
-		Status:  g.status,
-		Pairs:   []pair{},
-		Guessed: []string{},
-		Results: []bool{},
-		Wrong:   []string{},
-		UsedUp:  []string{},
+		ID:        g.id,
+		Status:    g.status,
+		Pairs:     []pair{},
+		Guessed:   []string{},
+		Results:   []bool{},
+		Wrong:     []string{},
+		UsedUp:    []string{},
+		MaxMisses: MaxMisses,
 	}
 	revealed := revealedTiles(g, attempts)
 	for _, a := range attempts {
@@ -433,18 +434,15 @@ func (h *Games) Guess(w http.ResponseWriter, r *http.Request) {
 	} else {
 		wrong++
 	}
-	// misses never end the round; the outcome is decided once every tile is
-	// revealed — too many misses flags the words for review
 	total := 0
 	for _, w := range g.words {
 		total += len(english[w])
 	}
-	if len(revealed) == total {
-		if wrong > ReviewMisses {
-			g.status = "lost"
-		} else {
-			g.status = "won"
-		}
+	switch {
+	case wrong >= MaxMisses:
+		g.status = "lost" // the fifth miss ends the round
+	case len(revealed) == total:
+		g.status = "won"
 	}
 	if g.status != "playing" {
 		if _, err := h.DB.Exec("UPDATE games SET status = $1 WHERE id = $2", g.status, g.id); err != nil {
