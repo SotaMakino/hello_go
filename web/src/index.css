@@ -1,19 +1,21 @@
 :root {
-  /* newspaper edition: newsprint paper, ink text, tricolore-red accent */
-  --text: #4a463d;
-  --text-h: #141310;
-  --bg: #f9f7f1;
-  --border: #d8d3c5;
-  --code-bg: #efeadd;
-  --accent: #cd212a;
-  --accent-bg: rgba(205, 33, 42, 0.07);
-  --accent-border: rgba(205, 33, 42, 0.45);
+  /* La Gazzetta print edition: the signature pink newsprint, black ink */
+  --text: #3a2b28;
+  --text-h: #1a1210;
+  --bg: #f7d9cf; /* carta rosa */
+  --paper: #fbe7e0; /* lighter panel pink */
+  --border: #d09f95;
+  --code-bg: #f2cabf;
+  --accent: #b3161d; /* Gazzetta headline red */
+  --accent-bg: rgba(179, 22, 29, 0.08);
+  --accent-border: rgba(179, 22, 29, 0.5);
+  --ink: #1a1210;
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+    rgba(60, 20, 20, 0.14) 0 10px 15px -3px, rgba(60, 20, 20, 0.08) 0 4px 6px -2px;
 
   --sans: Georgia, 'Times New Roman', Times, serif;
-  --heading: Didot, 'Bodoni MT', 'Playfair Display', Georgia, serif;
+  --heading: 'Playfair Display', Didot, 'Bodoni MT', Georgia, serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
@@ -33,18 +35,20 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* the night edition */
-    --text: #b3ada0;
-    --text-h: #f2eee3;
-    --bg: #181712;
-    --border: #3b382e;
-    --code-bg: #221f18;
-    --accent: #e4555e;
-    --accent-bg: rgba(228, 85, 94, 0.12);
-    --accent-border: rgba(228, 85, 94, 0.5);
+    /* keep the pink paper — a real Gazzetta is always rosa — just dimmed */
+    --text: #3a2b28;
+    --text-h: #1a1210;
+    --bg: #f0cdc2;
+    --paper: #f6ded6;
+    --border: #c8968b;
+    --code-bg: #ecc3b7;
+    --accent: #9e1219;
+    --accent-bg: rgba(158, 18, 25, 0.08);
+    --accent-border: rgba(158, 18, 25, 0.5);
+    --ink: #1a1210;
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+      rgba(60, 20, 20, 0.18) 0 10px 15px -3px, rgba(60, 20, 20, 0.1) 0 4px 6px -2px;
   }
 
   #social .button-icon {

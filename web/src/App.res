@@ -102,6 +102,11 @@ let speakItalian = word => {
   speak(u)
 }
 
+// today's date, spelled out in Italian for the masthead dateline
+let editionDate: string = %raw(`new Date().toLocaleDateString('it-IT', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+})`)
+
 @react.component
 let make = () => {
   let (authed, setAuthed) = React.useState(() => None) // None = still checking
@@ -298,17 +303,23 @@ let make = () => {
   | Some(true) =>
     <main className="app">
       <header className="app-header">
-        <div>
-          <h1>
-            {React.string("Le ")}
-            <span className="cinque"> {React.string("Cinque")} </span>
-          </h1>
-          <p className="tagline">
-            {React.string(
-              "Pick a letter and place it on its exact spot — drag it, or tap the letter then the tile",
-            )}
-          </p>
+        <p className="masthead-kicker">
+          {React.string("Quotidiano di Vocabolario Italiano")}
+        </p>
+        <h1>
+          {React.string("Le ")}
+          <span className="cinque"> {React.string("Cinque")} </span>
+        </h1>
+        <div className="dateline">
+          <span> {React.string("Anno I · N. 5")} </span>
+          <span className="dateline-date"> {React.string(editionDate)} </span>
+          <span> {React.string("Edizione Rosa")} </span>
         </div>
+        <p className="tagline">
+          {React.string(
+            "Pick a letter and place it on its exact spot — drag it, or tap the letter then the tile",
+          )}
+        </p>
         {switch account {
         | None => React.null
         | Some(acc) =>
