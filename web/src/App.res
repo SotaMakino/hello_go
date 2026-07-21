@@ -303,9 +303,7 @@ let make = () => {
   | Some(true) =>
     <main className="app">
       <header className="app-header">
-        <p className="masthead-kicker">
-          {React.string("Quotidiano di Vocabolario Italiano")}
-        </p>
+        <p className="masthead-kicker"> {React.string("Quotidiano di Vocabolario Italiano")} </p>
         <h1>
           {React.string("Le ")}
           <span className="cinque"> {React.string("Cinque")} </span>
