@@ -567,11 +567,18 @@
 
 .username {
   font-size: 13px;
-  padding: 0.3rem 0.7rem;
+  padding: 0.3rem 0.2rem;
   max-width: 10rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
+
+.username:hover {
+  border-bottom-color: var(--accent-border);
 }
 
 /* click-away layer behind the popup */
