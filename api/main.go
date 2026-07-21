@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"example.com/le-cinque/handlers"
@@ -38,21 +39,21 @@ func main() {
 	mux.HandleFunc("POST /login", a.Login)
 	mux.HandleFunc("POST /logout", a.Logout)
 
-	// protected — wrap a sub-mux with Auth
+	// no login required — an anonymous "player" cookie identifies each browser
 	game := http.NewServeMux()
 	game.HandleFunc("GET /game", h.Current)
 	game.HandleFunc("POST /game", h.New)
 	game.HandleFunc("POST /game/retry", h.Retry)
 	game.HandleFunc("POST /game/reset", h.Reset)
 	game.HandleFunc("POST /game/guess", h.Guess)
-	mux.Handle("/game", middleware.Auth(db, game))
-	mux.Handle("/game/", middleware.Auth(db, game))
-	mux.Handle("/me", middleware.Auth(db, http.HandlerFunc(h.Me)))
+	mux.Handle("/game", middleware.Player(db, game))
+	mux.Handle("/game/", middleware.Player(db, game))
+	mux.Handle("/me", middleware.Player(db, http.HandlerFunc(h.Me)))
 
-	allowedOrigin := env("ALLOWED_ORIGIN", "http://localhost:5173")
+	allowedOrigins := strings.Split(env("ALLOWED_ORIGIN", "http://localhost:5173"), ",")
 	srv := &http.Server{
 		Addr:    ":" + port,
-		Handler: middleware.Logging(middleware.CORS(allowedOrigin, mux)),
+		Handler: middleware.Logging(middleware.CORS(allowedOrigins, mux)),
 	}
 
 	go func() {

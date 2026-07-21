@@ -355,7 +355,7 @@ func TestGuess_AfterGameOver(t *testing.T) {
 	}
 }
 
-func TestCurrentGame_RevisitDealsAFreshRound(t *testing.T) {
+func TestCurrentGame_RevisitResumesRound(t *testing.T) {
 	h := setupGames(t)
 	id := startRound(t, h, "ann", testRound)
 	place(h, "ann", "A", 0, 2)
@@ -364,19 +364,14 @@ func TestCurrentGame_RevisitDealsAFreshRound(t *testing.T) {
 	rec := httptest.NewRecorder()
 	h.Current(rec, asUser("ann", "GET", "/game", ""))
 
+	// refreshing resumes the same in-progress round rather than dealing a new
+	// one, so the id, the words, and the placements so far all survive
 	s := decodeState(t, rec)
-	if s.ID == id || s.Status != "playing" {
-		t.Errorf("expected a brand-new round, got %+v", s)
+	if s.ID != id || s.Status != "playing" {
+		t.Errorf("expected the in-progress round resumed, got %+v", s)
 	}
-	if len(s.Guessed) != 0 || len(s.Wrong) != 0 {
-		t.Errorf("expected a fresh round with no guesses, got %+v", s)
-	}
-	for _, p := range s.Pairs {
-		for _, l := range p.English {
-			if l != "" {
-				t.Errorf("letter leaked in a fresh round: %+v", p)
-			}
-		}
+	if len(s.Guessed) != 2 {
+		t.Errorf("expected the two placements preserved, got %+v", s.Guessed)
 	}
 }
 

@@ -290,6 +290,7 @@ func (h *Games) writeState(w http.ResponseWriter, code int, g *game) {
 // learned — a word counts as learned once it appears in any won round.
 func (h *Games) Me(w http.ResponseWriter, r *http.Request) {
 	user := middleware.Username(r)
+	authed := middleware.Authenticated(r)
 	var learned int
 	err := h.DB.QueryRow(`SELECT COUNT(DISTINCT w) FROM (
 		SELECT unnest(string_to_array(word, ',')) AS w
@@ -299,14 +300,29 @@ func (h *Games) Me(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "query failed")
 		return
 	}
+	// the masthead's issue number is this player's own tally of rounds dealt,
+	// counting up as they play (separate per account and per guest browser)
+	var plays int
+	if err := h.DB.QueryRow("SELECT COUNT(*) FROM games WHERE username = $1", user).Scan(&plays); err != nil {
+		writeError(w, http.StatusInternalServerError, "query failed")
+		return
+	}
+	// guest players play anonymously; only signed-in accounts show a name and
+	// a persisted vocabulary count in the UI
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"username": user, "learned": learned})
+	json.NewEncoder(w).Encode(map[string]any{
+		"username": user,
+		"learned":  learned,
+		"guest":    !authed,
+		"plays":    plays,
+	})
 }
 
-// Current returns the user's latest finished round, or deals a fresh one.
-// Revisiting mid-round abandons it: every visit starts a new round with new
-// words. Abandoned rounds never reach the history, so their words stay in
-// the unseen pool.
+// Current returns the player's latest round, dealing a fresh one only when they
+// have never played. Refreshing resumes an in-progress round with the same
+// words rather than dealing a new one, so revisiting neither changes the board
+// nor inflates the global play tally. A finished round stays visible (with its
+// results) until the player starts a new one.
 func (h *Games) Current(w http.ResponseWriter, r *http.Request) {
 	user := middleware.Username(r)
 	g, err := h.latest(user)
@@ -314,7 +330,7 @@ func (h *Games) Current(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "query failed")
 		return
 	}
-	if g == nil || g.status == "playing" {
+	if g == nil {
 		if g, err = h.create(user); err != nil {
 			writeError(w, http.StatusInternalServerError, "could not start a game")
 			return
