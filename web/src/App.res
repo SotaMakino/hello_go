@@ -1,6 +1,8 @@
 %%raw(`import "./App.css"`)
 
-type pair = {italian: string, english: array<string>} // "" = still hidden
+// prompt = the word shown in full; tiles = the answer being spelled ("" = hidden).
+// Which language is which depends on the round's direction.
+type pair = {prompt: string, tiles: array<string>}
 
 // guest = true means anonymous play; a signed-in account shows its name + count.
 // plays is the global tally of rounds dealt (all players), shown as the issue N.
@@ -9,6 +11,7 @@ type me = {username: string, learned: int, guest: bool, plays: int}
 type game = {
   id: int,
   status: string, // "playing" | "won" | "lost" ("lost" = flagged for review)
+  direction: string, // "it" = spell the English word; "en" = spell the Italian one
   pairs: array<pair>,
   guessed: array<string>,
   results: array<bool>, // parallel to guessed: true = correct placement
@@ -278,12 +281,19 @@ let make = () => {
     | Error(_) => ()
     }
 
+  // the flags pick both the UI language and the guessing direction, so keep the
+  // UI language in step with whatever direction the round came back with
+  let applyGame = (g: game) => {
+    setGame(_ => Some(g))
+    setUiLang(_ => g.direction == "en" ? #en : #it)
+  }
+
   let loadGame = async () => {
     setError(_ => "")
     switch await ApiClient.request("/game") {
     | Ok(res) => {
         let fetched: game = await ApiClient.json(res)
-        setGame(_ => Some(fetched))
+        applyGame(fetched)
         loadAccount()->ignore
       }
     | Error(err) => setError(_ => I18n.failedLoad(uiLang, err.message))
@@ -350,7 +360,7 @@ let make = () => {
     switch await ApiClient.request(path, ~method_="POST") {
     | Ok(res) => {
         let fetched: game = await ApiClient.json(res)
-        setGame(_ => Some(fetched))
+        applyGame(fetched)
         loadAccount()->ignore // a new round bumps the global play tally (N.)
       }
     | Error(err) => setError(_ => I18n.failedStart(uiLang, err.message))
@@ -360,6 +370,14 @@ let make = () => {
 
   let newGame = () => startRound("/game")
   let retryGame = () => startRound("/game/retry")
+
+  // tapping a flag re-deals the untouched round in that direction (the server
+  // rejects it once a letter is placed, but the UI disables the flags by then)
+  let setDirection = async dir =>
+    switch await ApiClient.request("/game/direction", ~method_="POST", ~body={"direction": dir}) {
+    | Ok(res) => applyGame(await ApiClient.json(res))
+    | Error(_) => ()
+    }
 
   // a physical key press picks the letter up; clicking a tile drops it
   let handleKey = k => {
@@ -428,26 +446,33 @@ let make = () => {
     <main className="app">
       <header className="app-header">
         <p className="masthead-kicker"> {React.string(tr.kicker)} </p>
-        <div className="title-row">
-          <button
-            type_="button"
-            className={uiLang == #it ? "flag active" : "flag"}
-            ariaLabel={tr.showItalian}
-            onClick={_ => setUiLang(_ => #it)}>
-            {React.string(`🇮🇹`)}
-          </button>
-          <h1>
-            {React.string("Le ")}
-            <span className="cinque"> {React.string("Cinque")} </span>
-          </h1>
-          <button
-            type_="button"
-            className={uiLang == #en ? "flag active" : "flag"}
-            ariaLabel={tr.showEnglish}
-            onClick={_ => setUiLang(_ => #en)}>
-            {React.string(`🇺🇸`)}
-          </button>
-        </div>
+        {
+          // the flags choose the guessing direction, so they lock once the
+          // round is under way — you can only switch on a fresh board
+          let locked = g.guessed->Belt.Array.length > 0
+          <div className="title-row">
+            <button
+              type_="button"
+              className={g.direction == "it" ? "flag active" : "flag"}
+              ariaLabel={tr.showItalian}
+              disabled=locked
+              onClick={_ => setDirection("it")->ignore}>
+              {React.string(`🇮🇹`)}
+            </button>
+            <h1>
+              {React.string("Le ")}
+              <span className="cinque"> {React.string("Cinque")} </span>
+            </h1>
+            <button
+              type_="button"
+              className={g.direction == "en" ? "flag active" : "flag"}
+              ariaLabel={tr.showEnglish}
+              disabled=locked
+              onClick={_ => setDirection("en")->ignore}>
+              {React.string(`🇺🇸`)}
+            </button>
+          </div>
+        }
         <div className="dateline">
           <span>
             {React.string(
@@ -534,7 +559,7 @@ let make = () => {
         let letterCounts = {
           let m = Js.Dict.empty()
           g.pairs->Belt.Array.forEach(p =>
-            p.english->Belt.Array.forEach(l =>
+            p.tiles->Belt.Array.forEach(l =>
               if l != "" {
                 m->Js.Dict.set(l, m->Js.Dict.get(l)->Belt.Option.getWithDefault(0) + 1)
               }
@@ -551,21 +576,32 @@ let make = () => {
         <>
           <div className="pairs">
             {g.pairs
-            ->Belt.Array.mapWithIndex((wi, p) =>
-              <div key=p.italian className="pair-row">
+            ->Belt.Array.mapWithIndex((wi, p) => {
+              // the 🔊 always pronounces the Italian word: it's the prompt when
+              // spelling English, and the (now revealed) tiles when spelling
+              // Italian — hidden until solved so it never gives the answer away
+              let italianWord =
+                g.direction == "it"
+                  ? p.prompt
+                  : p.tiles->Belt.Array.every(l => l != "")
+                  ? p.tiles->Belt.Array.joinWith("", l => l)
+                  : ""
+              <div key=p.prompt className="pair-row">
                 <span className="italian">
-                  <button
-                    type_="button"
-                    className="speak"
-                    title={I18n.pronounce(uiLang, p.italian)}
-                    ariaLabel={I18n.pronounce(uiLang, p.italian)}
-                    onClick={_ => speakItalian(p.italian)}>
-                    {React.string(`🔊`)}
-                  </button>
-                  {React.string(p.italian)}
+                  {italianWord == ""
+                    ? React.null
+                    : <button
+                        type_="button"
+                        className="speak"
+                        title={I18n.pronounce(uiLang, italianWord)}
+                        ariaLabel={I18n.pronounce(uiLang, italianWord)}
+                        onClick={_ => speakItalian(italianWord)}>
+                        {React.string(`🔊`)}
+                      </button>}
+                  {React.string(p.prompt)}
                 </span>
                 <div className="english-tiles">
-                  {p.english
+                  {p.tiles
                   ->Belt.Array.mapWithIndex((i, letter) =>
                     letter == ""
                       ? <div
@@ -590,7 +626,7 @@ let make = () => {
                   ->React.array}
                 </div>
               </div>
-            )
+            })
             ->React.array}
           </div>
           // always rendered with reserved height, so guess feedback never

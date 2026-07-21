@@ -29,6 +29,8 @@ func Open(url string) (*sql.DB, error) {
 		word TEXT NOT NULL,
 		status TEXT NOT NULL DEFAULT 'playing'
 	)`)
+	// "it" spells the English word (default); "en" spells the Italian one
+	_, err = db.Exec(`ALTER TABLE games ADD COLUMN IF NOT EXISTS direction TEXT NOT NULL DEFAULT 'it'`)
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS guesses (
 		id BIGSERIAL PRIMARY KEY,
 		game_id BIGINT NOT NULL REFERENCES games(id) ON DELETE CASCADE,

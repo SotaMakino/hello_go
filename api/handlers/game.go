@@ -31,17 +31,21 @@ type game struct {
 	id     int64
 	words  []string
 	status string // playing | won | lost
+	// "it" (default): the Italian word is the clue, the English word is spelled.
+	// "en": flipped — the English word is the clue, the Italian word is spelled.
+	direction string
 }
 
 type pair struct {
-	Italian string   `json:"italian"`
-	English []string `json:"english"` // one entry per letter: revealed letter or ""
+	Prompt string   `json:"prompt"` // the word shown in full as the clue
+	Tiles  []string `json:"tiles"`  // one entry per letter of the answer: revealed letter or ""
 }
 
 type gameState struct {
-	ID      int64    `json:"id"`
-	Status  string   `json:"status"` // "lost" = completed, flagged for review
-	Pairs   []pair   `json:"pairs"`
+	ID        int64    `json:"id"`
+	Status    string   `json:"status"`    // "lost" = completed, flagged for review
+	Direction string   `json:"direction"` // "it" | "en" — which word is spelled
+	Pairs     []pair   `json:"pairs"`
 	Guessed   []string `json:"guessed"`   // the letter of every placement tried, in order
 	Results   []bool   `json:"results"`   // parallel to guessed: true = correct placement
 	Wrong     []string `json:"wrong"`     // the letters of failed placements, in order
@@ -49,12 +53,36 @@ type gameState struct {
 	MaxMisses int      `json:"maxMisses"` // wrong placements allowed before losing
 }
 
+// answer is the word the player spells out on the tiles; clue is the word shown
+// in full. The direction decides which side of the pair is which.
+func (g *game) answer(w string) string {
+	if g.direction == "en" {
+		return w
+	}
+	return english[w]
+}
+
+func (g *game) clue(w string) string {
+	if g.direction == "en" {
+		return english[w]
+	}
+	return w
+}
+
+// normalizeDirection coerces client input to a known value, defaulting to "it".
+func normalizeDirection(d string) string {
+	if d == "en" {
+		return "en"
+	}
+	return "it"
+}
+
 func (h *Games) latest(user string) (*game, error) {
 	g := &game{}
 	var joined string
 	err := h.DB.QueryRow(
-		"SELECT id, word, status FROM games WHERE username = $1 ORDER BY id DESC LIMIT 1",
-		user).Scan(&g.id, &joined, &g.status)
+		"SELECT id, word, status, direction FROM games WHERE username = $1 ORDER BY id DESC LIMIT 1",
+		user).Scan(&g.id, &joined, &g.status, &g.direction)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -145,15 +173,15 @@ func (h *Games) nextWords(user string) ([]string, error) {
 	return picked, nil
 }
 
-func (h *Games) create(user string) (*game, error) {
+func (h *Games) create(user, direction string) (*game, error) {
 	picked, err := h.nextWords(user)
 	if err != nil {
 		return nil, err
 	}
-	g := &game{words: picked, status: "playing"}
+	g := &game{words: picked, status: "playing", direction: direction}
 	err = h.DB.QueryRow(
-		"INSERT INTO games (username, word, status) VALUES ($1, $2, 'playing') RETURNING id",
-		user, strings.Join(picked, ",")).Scan(&g.id)
+		"INSERT INTO games (username, word, status, direction) VALUES ($1, $2, 'playing', $3) RETURNING id",
+		user, strings.Join(picked, ","), direction).Scan(&g.id)
 	return g, err
 }
 
@@ -184,7 +212,7 @@ func (g *game) correct(a attempt) bool {
 	if a.word < 0 || a.word >= len(g.words) {
 		return false
 	}
-	e := english[g.words[a.word]]
+	e := g.answer(g.words[a.word])
 	return a.pos >= 0 && a.pos < len(e) && string(e[a.pos]) == a.letter
 }
 
@@ -216,7 +244,7 @@ func revealedTiles(g *game, attempts []attempt) map[tileKey]bool {
 		// a correct placement opens every occurrence of that letter, so the
 		// player never has to place the same character twice
 		for wi, w := range g.words {
-			for i, r := range english[w] {
+			for i, r := range g.answer(w) {
 				if string(r) == a.letter {
 					revealed[tileKey{wi, i}] = true
 				}
@@ -234,6 +262,7 @@ func (h *Games) state(g *game) (gameState, error) {
 	s := gameState{
 		ID:        g.id,
 		Status:    g.status,
+		Direction: g.direction,
 		Pairs:     []pair{},
 		Guessed:   []string{},
 		Results:   []bool{},
@@ -252,7 +281,7 @@ func (h *Games) state(g *game) (gameState, error) {
 	counts := map[string]int{} // occurrences of each letter in the round
 	found := map[string]int{}  // revealed occurrences of each letter
 	for wi, w := range g.words {
-		e := english[w]
+		e := g.answer(w)
 		out := make([]string, len(e))
 		for i, r := range e {
 			counts[string(r)]++
@@ -264,7 +293,7 @@ func (h *Games) state(g *game) (gameState, error) {
 				out[i] = string(r)
 			}
 		}
-		s.Pairs = append(s.Pairs, pair{Italian: w, English: out})
+		s.Pairs = append(s.Pairs, pair{Prompt: g.clue(w), Tiles: out})
 	}
 	for l, c := range counts {
 		if found[l] == c {
@@ -331,7 +360,7 @@ func (h *Games) Current(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if g == nil {
-		if g, err = h.create(user); err != nil {
+		if g, err = h.create(user, "it"); err != nil {
 			writeError(w, http.StatusInternalServerError, "could not start a game")
 			return
 		}
@@ -351,7 +380,12 @@ func (h *Games) New(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "finish the current game first")
 		return
 	}
-	g, err = h.create(user)
+	// carry the player's chosen direction into the next round
+	dir := "it"
+	if g != nil {
+		dir = g.direction
+	}
+	g, err = h.create(user, dir)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not start a game")
 		return
@@ -391,14 +425,66 @@ func (h *Games) Retry(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "no finished game to retry")
 		return
 	}
-	fresh := &game{words: g.words, status: "playing"}
+	fresh := &game{words: g.words, status: "playing", direction: g.direction}
 	if err := h.DB.QueryRow(
-		"INSERT INTO games (username, word, status) VALUES ($1, $2, 'playing') RETURNING id",
-		user, strings.Join(g.words, ",")).Scan(&fresh.id); err != nil {
+		"INSERT INTO games (username, word, status, direction) VALUES ($1, $2, 'playing', $3) RETURNING id",
+		user, strings.Join(g.words, ","), g.direction).Scan(&fresh.id); err != nil {
 		writeError(w, http.StatusInternalServerError, "could not start a game")
 		return
 	}
 	h.writeState(w, http.StatusCreated, fresh)
+}
+
+// SetDirection flips the current round between guessing the English word and
+// guessing the Italian one. It is allowed only before the player has placed any
+// letter — the UI disables the language flags once a round is underway. Changing
+// direction also deals a fresh set of words, reusing the untouched round's row so
+// the play tally is not inflated.
+func (h *Games) SetDirection(w http.ResponseWriter, r *http.Request) {
+	user := middleware.Username(r)
+	var body struct {
+		Direction string `json:"direction"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	dir := normalizeDirection(body.Direction)
+
+	g, err := h.latest(user)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "query failed")
+		return
+	}
+	if g == nil || g.status != "playing" {
+		writeError(w, http.StatusConflict, "no game in progress")
+		return
+	}
+	attempts, err := h.attempts(g)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "query failed")
+		return
+	}
+	if len(attempts) > 0 {
+		writeError(w, http.StatusConflict, "round already started")
+		return
+	}
+	if g.direction != dir {
+		picked, err := h.nextWords(user)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "query failed")
+			return
+		}
+		if _, err := h.DB.Exec(
+			"UPDATE games SET word = $1, direction = $2 WHERE id = $3",
+			strings.Join(picked, ","), dir, g.id); err != nil {
+			writeError(w, http.StatusInternalServerError, "could not switch direction")
+			return
+		}
+		g.words = picked
+		g.direction = dir
+	}
+	h.writeState(w, http.StatusOK, g)
 }
 
 // Guess places one letter on one tile of the current round.
@@ -429,7 +515,7 @@ func (h *Games) Guess(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.Word < 0 || body.Word >= len(g.words) ||
-		body.Position < 0 || body.Position >= len(english[g.words[body.Word]]) {
+		body.Position < 0 || body.Position >= len(g.answer(g.words[body.Word])) {
 		writeError(w, http.StatusBadRequest, "no such tile")
 		return
 	}
@@ -469,7 +555,7 @@ func (h *Games) Guess(w http.ResponseWriter, r *http.Request) {
 	}
 	total := 0
 	for _, w := range g.words {
-		total += len(english[w])
+		total += len(g.answer(w))
 	}
 	switch {
 	case wrong >= MaxMisses:

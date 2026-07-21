@@ -61,6 +61,18 @@ func startRound(t *testing.T, h *Games, user string, ws []string) int64 {
 	return id
 }
 
+// startRoundDir inserts a playing round with a chosen guessing direction.
+func startRoundDir(t *testing.T, h *Games, user string, ws []string, dir string) int64 {
+	t.Helper()
+	var id int64
+	if err := h.DB.QueryRow(
+		"INSERT INTO games (username, word, status, direction) VALUES ($1, $2, 'playing', $3) RETURNING id",
+		user, strings.Join(ws, ","), dir).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	return id
+}
+
 // finishRound records a completed round directly, for curriculum tests.
 func finishRound(t *testing.T, h *Games, user string, ws []string, status string) {
 	t.Helper()
@@ -157,18 +169,18 @@ func TestCurrentGame_CreatesRandomRound(t *testing.T) {
 	}
 	seen := map[string]bool{}
 	for i, p := range s.Pairs {
-		if english[p.Italian] == "" {
-			t.Errorf("pair %d: %q is not in the word list", i, p.Italian)
+		if english[p.Prompt] == "" {
+			t.Errorf("pair %d: %q is not in the word list", i, p.Prompt)
 		}
-		if seen[p.Italian] {
-			t.Errorf("%q served twice in one round", p.Italian)
+		if seen[p.Prompt] {
+			t.Errorf("%q served twice in one round", p.Prompt)
 		}
-		seen[p.Italian] = true
-		if len(p.English) != len(english[p.Italian]) {
+		seen[p.Prompt] = true
+		if len(p.Tiles) != len(english[p.Prompt]) {
 			t.Errorf("pair %d: expected %d blanks, got %d",
-				i, len(english[p.Italian]), len(p.English))
+				i, len(english[p.Prompt]), len(p.Tiles))
 		}
-		for _, l := range p.English {
+		for _, l := range p.Tiles {
 			if l != "" {
 				t.Errorf("letter leaked in a fresh round: %+v", p)
 			}
@@ -190,11 +202,78 @@ func TestGuess_CorrectPlacementRevealsEveryOccurrence(t *testing.T) {
 		t.Errorf("a correct placement must not count as a miss: %+v", s)
 	}
 	// one correct A opens the A in TRAIN, BANK, and PARK alike
-	if s.Pairs[0].English[2] != "A" || s.Pairs[1].English[1] != "A" || s.Pairs[4].English[1] != "A" {
+	if s.Pairs[0].Tiles[2] != "A" || s.Pairs[1].Tiles[1] != "A" || s.Pairs[4].Tiles[1] != "A" {
 		t.Errorf("expected every A revealed, got %+v", s.Pairs)
 	}
-	if s.Pairs[0].English[0] != "" {
+	if s.Pairs[0].Tiles[0] != "" {
 		t.Errorf("other letters must stay hidden, got %+v", s.Pairs[0])
+	}
+}
+
+func TestGuess_ReverseDirectionSpellsItalian(t *testing.T) {
+	h := setupGames(t)
+	startRoundDir(t, h, "ann", testRound, "en")
+
+	rec := httptest.NewRecorder()
+	h.Current(rec, asUser("ann", "GET", "/game", ""))
+	s := decodeState(t, rec)
+	if s.Direction != "en" {
+		t.Fatalf("expected direction en, got %q", s.Direction)
+	}
+	// the English word is shown as the clue; the Italian word is spelled out
+	if s.Pairs[0].Prompt != "TRAIN" {
+		t.Errorf("expected English clue TRAIN, got %q", s.Pairs[0].Prompt)
+	}
+	if len(s.Pairs[0].Tiles) != len("TRENO") {
+		t.Errorf("expected %d tiles for TRENO, got %d", len("TRENO"), len(s.Pairs[0].Tiles))
+	}
+	// placing T on the first tile is correct against TRENO, not TRAIN
+	s = decodeState(t, place(h, "ann", "T", 0, 0))
+	if s.Pairs[0].Tiles[0] != "T" || len(s.Wrong) != 0 {
+		t.Errorf("expected T revealed on the Italian word, got %+v", s.Pairs[0])
+	}
+}
+
+func TestSetDirection_FlipsAndDealsFreshWords(t *testing.T) {
+	h := setupGames(t)
+	id := startRound(t, h, "ann", testRound) // default direction "it"
+
+	rec := httptest.NewRecorder()
+	h.SetDirection(rec, asUser("ann", "POST", "/game/direction", `{"direction":"en"}`))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	s := decodeState(t, rec)
+	// same untouched row, now in the English direction with a fresh, blank round
+	if s.ID != id || s.Direction != "en" || len(s.Pairs) != WordsPerRound || len(s.Guessed) != 0 {
+		t.Errorf("expected the same round flipped to a fresh en round, got %+v", s)
+	}
+	for i, p := range s.Pairs {
+		// in the en direction the prompt is an English word from the curriculum
+		found := false
+		for _, v := range words {
+			found = found || v.English == p.Prompt
+		}
+		if !found {
+			t.Errorf("pair %d: %q is not an English curriculum word", i, p.Prompt)
+		}
+		for _, l := range p.Tiles {
+			if l != "" {
+				t.Errorf("letter leaked after a flip: %+v", p)
+			}
+		}
+	}
+}
+
+func TestSetDirection_RejectedAfterFirstGuess(t *testing.T) {
+	h := setupGames(t)
+	startRound(t, h, "ann", testRound)
+	place(h, "ann", "A", 0, 2) // a correct placement — the round is now underway
+
+	rec := httptest.NewRecorder()
+	h.SetDirection(rec, asUser("ann", "POST", "/game/direction", `{"direction":"en"}`))
+	if rec.Code != http.StatusConflict {
+		t.Errorf("expected 409 once a letter is placed, got %d", rec.Code)
 	}
 }
 
@@ -211,7 +290,7 @@ func TestGuess_WrongTileIsAMiss(t *testing.T) {
 	if len(s.Wrong) != 1 || s.Wrong[0] != "A" {
 		t.Errorf("expected one recorded miss, got %+v", s.Wrong)
 	}
-	if s.Pairs[0].English[2] != "" {
+	if s.Pairs[0].Tiles[2] != "" {
 		t.Errorf("a wrong placement must not reveal anything, got %+v", s.Pairs[0])
 	}
 }
@@ -249,7 +328,7 @@ func TestGuess_FifthMissLoses(t *testing.T) {
 		t.Errorf("expected the fifth miss to end the round, got %+v", s)
 	}
 	// the answers are revealed on loss
-	if strings.Join(s.Pairs[0].English, "") != "TRAIN" {
+	if strings.Join(s.Pairs[0].Tiles, "") != "TRAIN" {
 		t.Errorf("expected TRAIN revealed, got %+v", s.Pairs[0])
 	}
 }
@@ -263,7 +342,7 @@ func TestGuess_FillingEveryTileWins(t *testing.T) {
 	if s.Status != "won" || len(s.Wrong) != 0 {
 		t.Errorf("expected a clean win, got %+v", s)
 	}
-	if strings.Join(s.Pairs[0].English, "") != "TRAIN" {
+	if strings.Join(s.Pairs[0].Tiles, "") != "TRAIN" {
 		t.Errorf("expected TRAIN fully revealed, got %+v", s.Pairs[0])
 	}
 }
@@ -437,10 +516,10 @@ func TestRetry_RepeatsTheSameWords(t *testing.T) {
 		t.Errorf("expected a fresh retry round, got %+v", s)
 	}
 	for i, p := range s.Pairs {
-		if p.Italian != testRound[i] {
-			t.Errorf("pair %d: expected %q, got %q", i, testRound[i], p.Italian)
+		if p.Prompt != testRound[i] {
+			t.Errorf("pair %d: expected %q, got %q", i, testRound[i], p.Prompt)
 		}
-		for _, l := range p.English {
+		for _, l := range p.Tiles {
 			if l != "" {
 				t.Errorf("letter leaked in a retry round: %+v", p)
 			}
@@ -544,7 +623,7 @@ func TestNextWords_MissedRoundComesBackAfterGap(t *testing.T) {
 	h := setupGames(t)
 	finishRound(t, h, "ann", firstN(5), "lost")
 	for i := 0; i < ReviewGap; i++ {
-		finishRound(t, h, "ann", firstN(5*(i+2))[5*(i+1):], "won")
+		finishRound(t, h, "ann", firstN(5 * (i + 2))[5*(i+1):], "won")
 	}
 
 	ws, err := h.nextWords("ann")
