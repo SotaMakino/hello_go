@@ -98,10 +98,11 @@ external speak: utterance => unit = "speak"
 @val @scope(("window", "speechSynthesis"))
 external cancelSpeech: unit => unit = "cancel"
 
-let speakItalian = word => {
+// pronounce a word in the given BCP-47 voice ("it-IT" or "en-US")
+let speakWord = (word, langCode) => {
   cancelSpeech() // cut off any word still playing
   let u = makeUtterance(word->Js.String2.toLowerCase)
-  u->setLang("it-IT")
+  u->setLang(langCode)
   u->setRate(0.8) // slowed down so each syllable is easy to catch
   u->setPitch(1.0) // pitch
   speak(u)
@@ -575,59 +576,53 @@ let make = () => {
         let missCount = g.wrong->Belt.Array.length
         <>
           <div className="pairs">
-            {g.pairs
-            ->Belt.Array.mapWithIndex((wi, p) => {
-              // the 🔊 always pronounces the Italian word: it's the prompt when
-              // spelling English, and the (now revealed) tiles when spelling
-              // Italian — hidden until solved so it never gives the answer away
-              let italianWord =
-                g.direction == "it"
-                  ? p.prompt
-                  : p.tiles->Belt.Array.every(l => l != "")
-                  ? p.tiles->Belt.Array.joinWith("", l => l)
-                  : ""
-              <div key=p.prompt className="pair-row">
-                <span className="italian">
-                  {italianWord == ""
-                    ? React.null
-                    : <button
-                        type_="button"
-                        className="speak"
-                        title={I18n.pronounce(uiLang, italianWord)}
-                        ariaLabel={I18n.pronounce(uiLang, italianWord)}
-                        onClick={_ => speakItalian(italianWord)}>
-                        {React.string(`🔊`)}
-                      </button>}
-                  {React.string(p.prompt)}
-                </span>
-                <div className="english-tiles">
-                  {p.tiles
-                  ->Belt.Array.mapWithIndex((i, letter) =>
-                    letter == ""
-                      ? <div
-                          key={i->Belt.Int.toString}
-                          className="tile open"
-                          onDragOver={e => ReactEvent.Mouse.preventDefault(e)}
-                          onDrop={e => {
-                            ReactEvent.Mouse.preventDefault(e)
-                            let l = dragged.current
-                            dragged.current = ""
-                            placeLetter(l, wi, i)->ignore
-                          }}
-                          onClick={_ => placeLetter(selected, wi, i)->ignore}
-                        />
-                      : <div
-                          key={i->Belt.Int.toString}
-                          className="tile revealed"
-                          style={{backgroundColor: tileColor(letter)}}>
-                          {React.string(letter)}
-                        </div>
-                  )
-                  ->React.array}
+            {
+              // the 🔊 pronounces the prompt word in its own language: Italian
+              // when spelling English, English when spelling Italian
+              let promptLang = g.direction == "en" ? "en-US" : "it-IT"
+              g.pairs
+              ->Belt.Array.mapWithIndex((wi, p) =>
+                <div key=p.prompt className="pair-row">
+                  <span className="italian">
+                    <button
+                      type_="button"
+                      className="speak"
+                      title={I18n.pronounce(uiLang, p.prompt)}
+                      ariaLabel={I18n.pronounce(uiLang, p.prompt)}
+                      onClick={_ => speakWord(p.prompt, promptLang)}>
+                      {React.string(`🔊`)}
+                    </button>
+                    {React.string(p.prompt)}
+                  </span>
+                  <div className="english-tiles">
+                    {p.tiles
+                    ->Belt.Array.mapWithIndex((i, letter) =>
+                      letter == ""
+                        ? <div
+                            key={i->Belt.Int.toString}
+                            className="tile open"
+                            onDragOver={e => ReactEvent.Mouse.preventDefault(e)}
+                            onDrop={e => {
+                              ReactEvent.Mouse.preventDefault(e)
+                              let l = dragged.current
+                              dragged.current = ""
+                              placeLetter(l, wi, i)->ignore
+                            }}
+                            onClick={_ => placeLetter(selected, wi, i)->ignore}
+                          />
+                        : <div
+                            key={i->Belt.Int.toString}
+                            className="tile revealed"
+                            style={{backgroundColor: tileColor(letter)}}>
+                            {React.string(letter)}
+                          </div>
+                    )
+                    ->React.array}
+                  </div>
                 </div>
-              </div>
-            })
-            ->React.array}
+              )
+              ->React.array
+            }
           </div>
           // always rendered with reserved height, so guess feedback never
           // shifts the keyboard below it
