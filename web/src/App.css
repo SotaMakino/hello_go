@@ -1,7 +1,7 @@
 .app {
   width: 100%;
   max-width: 640px;
-  margin: 2.5rem auto;
+  margin: 1rem auto;
   padding: 0 1.25rem;
   box-sizing: border-box;
   text-align: left;
@@ -28,20 +28,20 @@
   margin: 0.4rem 0 0.1rem;
 }
 
+/* all-black, rounded wordmark in the spirit of the Gazzetta masthead */
 .app-header h1 {
-  font-family: var(--heading);
-  font-size: 64px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -1px;
+  font-family: var(--logo);
+  font-size: 68px;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -1.5px;
   color: var(--ink);
   margin: 0.2rem 0 0.5rem;
 }
 
-/* the "five" deserves the spotlight */
 .app-header .cinque {
-  color: var(--accent);
-  font-style: italic;
+  color: var(--ink);
+  font-style: normal;
 }
 
 /* dateline rule under the masthead: date · edition · number */
@@ -51,12 +51,11 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.35rem 0;
-  border-top: 1px solid var(--ink);
   border-bottom: 3px double var(--ink);
   font-family: var(--sans);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--text);
 }
@@ -158,8 +157,58 @@
 }
 
 .tagline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
   font-size: 14px;
   margin: 0.15rem 0 0;
+}
+
+.tagline-text {
+  display: grid;
+  align-items: center; /* center the shorter (English) line in the reserved box */
+  max-width: 42rem;
+  text-align: center;
+}
+
+/* stack both languages in one cell so the box is always as tall as the taller
+   (Italian) line — toggling the flag then never shifts the layout */
+.tagline-text .lang-line {
+  grid-area: 1 / 1;
+}
+
+.tagline-text .lang-line.hidden {
+  visibility: hidden;
+}
+
+/* language flags flanking the tagline; the inactive one is dimmed */
+.flag {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0.1rem 0.2rem;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.4;
+  filter: grayscale(0.5);
+  transition: opacity 0.15s, filter 0.15s, transform 0.1s;
+}
+
+.flag:hover {
+  opacity: 0.85;
+  filter: none;
+  transform: scale(1.2);
+}
+
+.flag.active {
+  opacity: 1;
+  filter: none;
+}
+
+.flag:active {
+  transform: scale(0.9);
 }
 
 /* --- Mistakes indicator --- */
@@ -410,6 +459,10 @@
   font-size: 14px;
   color: var(--text-h);
   margin: 0.75rem 0 0;
+  /* reserve exactly one line so guess feedback never shifts the layout; the
+     unitless line-height makes the empty and filled heights match */
+  line-height: 1.4;
+  min-height: 1.4em;
 }
 
 .banner {
@@ -435,9 +488,9 @@
 /* --- States --- */
 
 .error {
-  color: #b42318;
-  background: rgba(212, 55, 44, 0.08);
-  border: 1px solid rgba(212, 55, 44, 0.35);
+  color: rgba(58, 43, 40, 0.7); /* muted gray, not alarming red */
+  background: rgba(58, 43, 40, 0.06);
+  border: 1px solid rgba(58, 43, 40, 0.25);
   border-radius: 8px;
   padding: 0.6rem 0.9rem;
   margin: 0 0 1rem;
@@ -450,7 +503,6 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .error,
   .field-error {
     color: #f97066;
   }
@@ -725,4 +777,43 @@
 .try-dot.spent {
   background: var(--accent);
   border-color: var(--accent);
+}
+
+/* --- Sign-in overlay (guests can play; signing in tracks vocabulary) --- */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.auth-modal {
+  position: relative;
+  z-index: 31;
+  width: min(24rem, 100%);
+  padding: 1.5rem 1.75rem 1.75rem;
+  background: var(--bg);
+  border: 1px solid var(--text-h);
+  box-shadow: var(--shadow);
+}
+
+.auth-close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.5rem;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  padding: 0.1rem 0.4rem;
+}
+
+/* small disclaimer at the very bottom */
+.app-footer {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(58, 43, 40, 0.5); /* muted gray-brown on the pink paper */
 }

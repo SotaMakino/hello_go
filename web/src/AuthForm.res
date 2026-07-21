@@ -1,5 +1,6 @@
 @react.component
-let make = (~onSuccess: unit => unit) => {
+let make = (~lang, ~onSuccess: unit => unit) => {
+  let tr = I18n.strings(lang)
   let (mode, setMode) = React.useState(() => #login)
   let (username, setUsername) = React.useState(() => "")
   let (password, setPassword) = React.useState(() => "")
@@ -23,7 +24,7 @@ let make = (~onSuccess: unit => unit) => {
   }
 
   <div className="auth">
-    <h1> {React.string(mode == #login ? "Log in" : "Sign up")} </h1>
+    <h1> {React.string(mode == #login ? tr.logInTitle : tr.signUpTitle)} </h1>
     {error == "" ? React.null : <p className="error"> {React.string(error)} </p>}
     <form onSubmit={e => submit(e)->ignore}>
       <input
@@ -32,7 +33,7 @@ let make = (~onSuccess: unit => unit) => {
           let value = ReactEvent.Form.target(e)["value"]
           setUsername(_ => value)
         }}
-        placeholder="Username"
+        placeholder={tr.username}
         autoComplete="username"
         required=true
       />
@@ -44,21 +45,21 @@ let make = (~onSuccess: unit => unit) => {
             let value = ReactEvent.Form.target(e)["value"]
             setPassword(_ => value)
           }}
-          placeholder="Password"
+          placeholder={tr.password}
           autoComplete={mode == #login ? "current-password" : "new-password"}
           minLength=8
           required=true
         />
         <button type_="button" className="toggle-password" onClick={_ => setShowPassword(s => !s)}>
-          {React.string(showPassword ? "Hide" : "Show")}
+          {React.string(showPassword ? tr.hide : tr.show)}
         </button>
       </div>
       <button type_="submit" className="primary" disabled=busy>
-        {React.string(busy ? "Please wait…" : mode == #login ? "Log in" : "Create account")}
+        {React.string(busy ? tr.pleaseWait : mode == #login ? tr.logIn : tr.createAccount)}
       </button>
     </form>
     <p>
-      {React.string(mode == #login ? "No account? " : "Already have an account? ")}
+      {React.string(mode == #login ? tr.noAccountQ : tr.haveAccountQ)}
       <button
         type_="button"
         className="link"
@@ -66,7 +67,7 @@ let make = (~onSuccess: unit => unit) => {
           setMode(m => m == #login ? #signup : #login)
           setError(_ => "")
         }}>
-        {React.string(mode == #login ? "Sign up" : "Log in")}
+        {React.string(mode == #login ? tr.signUpTitle : tr.logInTitle)}
       </button>
     </p>
   </div>
