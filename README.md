@@ -6,9 +6,6 @@
   <a href="https://le-cinque.pages.dev">
     <img src="https://img.shields.io/badge/play-le%20cinque-b3161d" alt="Play">
   </a>
-  <a href="https://github.com/SotaMakino/le-cinque/actions/workflows/ci.yml">
-    <img src="https://github.com/SotaMakino/le-cinque/actions/workflows/ci.yml/badge.svg" alt="CI status">
-  </a>
 </p>
 
 <div>&nbsp;</div>
