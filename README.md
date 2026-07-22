@@ -1,46 +1,21 @@
-# Le Cinque
+<p align="center">
+  <img src="docs/logo.png" alt="Le Cinque">
+</p>
 
-**Le Cinque** ("five o'clock") is a little game for learning beginner Italian
-vocabulary, five words at a time.
+<p align="center">
+  <a href="https://le-cinque.pages.dev">Play</a>
+  ·
+  <a href="https://github.com/SotaMakino/le-cinque/actions/workflows/ci.yml">
+    <img src="https://github.com/SotaMakino/le-cinque/actions/workflows/ci.yml/badge.svg" alt="CI status">
+  </a>
+</p>
 
-![A round in progress](docs/gameplay.png)
+<div>&nbsp;</div>
 
-## How to play
+A game for learning beginner Italian vocabulary, five words at a time.
 
-Each round lays out **five Italian words** on the left. Their English
-translations sit on the right, hidden — you only see how many letters each one
-has. Your job is to fill them in.
+## Curriculum
 
-- Pick a letter from the keyboard and **drop it on the exact tile** where you
-  think it belongs. On a touchscreen, tap the letter and then tap the tile;
-  with a keyboard, you can just type.
-- Land it in the right spot and that letter lights up — along with **every
-  other place the same letter appears** across all five words. That letter is
-  then done, and it leaves the keyboard.
-- Put a letter in the wrong spot and it counts as a **mistake**. You get five
-  mistakes; the fifth ends the round.
-- Tap the 🔊 next to any Italian word to **hear it pronounced**.
-
-Reveal all five words to win. Run out of mistakes and the answers are shown so
-you can study them — those words will come back later so you get another shot.
-
-## Learning by design
-
-The game borrows a few ideas from how people actually remember things:
-
-- **Retrieval practice** — you recall the English yourself rather than just
-  reading it.
-- **Instant feedback** — right and wrong show immediately, in color.
-- **Spaced repetition** — words you miss quietly return a few rounds later,
-  right when a reminder helps most.
-
-There are over 1,500 everyday words in the pool — nouns, verbs, adjectives,
-numbers, the months — and every round deals a fresh random five. Your account
-keeps a running count of the words you've learned.
-
-## Play it
-
-Sign up with a username and password, and your progress is saved to your
-account so you can pick up where you left off.
+Five Italian words are laid out with their English translations hidden — fill in the letters to reveal all five before you run out of mistakes. Over 1,500 everyday words, with spaced repetition so the ones you miss come back later.
 
 *Buono studio!* 📚🇮🇹
