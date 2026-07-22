@@ -512,6 +512,17 @@ let make = () => {
   | Some(g) =>
     <main className="app">
       <header className="app-header">
+        <div className="dateline">
+          <span>
+            {React.string(
+              switch account {
+              | Some(acc) => issueLabel(uiLang, acc.plays)
+              | None => uiLang == #it ? "N. —" : "No. —"
+              },
+            )}
+          </span>
+          <span className="dateline-date"> {React.string(I18n.editionDate(uiLang))} </span>
+        </div>
         {
           // the flags choose the guessing direction, so they lock once the
           // round is under way — you can only switch on a fresh board
@@ -539,17 +550,6 @@ let make = () => {
             </button>
           </div>
         }
-        <div className="dateline">
-          <span>
-            {React.string(
-              switch account {
-              | Some(acc) => issueLabel(uiLang, acc.plays)
-              | None => uiLang == #it ? "N. —" : "No. —"
-              },
-            )}
-          </span>
-          <span className="dateline-date"> {React.string(I18n.editionDate(uiLang))} </span>
-        </div>
         <p className="tagline">
           <span className="tagline-text">
             // both languages are laid out in the same grid cell; the hidden one
