@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.png" alt="Le Cinque">
+  <img src="docs/le-cinque.png" alt="Le Cinque">
 </p>
 
 <p align="center">
