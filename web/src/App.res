@@ -44,6 +44,11 @@ type pointerEvent
 external addPointerListener: (string, pointerEvent => unit) => unit = "addEventListener"
 @val @scope("document")
 external removePointerListener: (string, pointerEvent => unit) => unit = "removeEventListener"
+type domNode
+@get external pointerTarget: pointerEvent => domNode = "target"
+@send @return(nullable) external closest: (domNode, string) => option<domNode> = "closest"
+@send external blur: domNode => unit = "blur"
+@val @scope("document") external activeElement: domNode = "activeElement"
 
 let keyboardRows = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -449,9 +454,20 @@ let make = () => {
   })
 
   // a pointer press (click or tap, anywhere) drops the arrow-key cursor so it
-  // never lingers once the mouse takes over
+  // never lingers once the mouse takes over. A press outside the on-screen
+  // keyboard also blurs any focused key, so its focus ring doesn't stick.
   React.useEffect0(() => {
-    let listener = _ => setNavMode(_ => false)
+    let listener = e => {
+      setNavMode(_ => false)
+      switch e->pointerTarget->closest(".keyboard") {
+      | Some(_) => () // inside the keyboard: leave the key focused
+      | None =>
+        switch activeElement->closest(".key") {
+        | Some(key) => key->blur
+        | None => ()
+        }
+      }
+    }
     addPointerListener("pointerdown", listener)
     Some(() => removePointerListener("pointerdown", listener))
   })
