@@ -1,4 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Ultra&display=swap');
+/* Self-hosted masthead font: no third-party request, no render-blocking @import.
+   font-display: swap paints the Georgia fallback first, then swaps in Ultra. */
+@font-face {
+  font-family: 'Ultra';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/ultra-latin.woff2') format('woff2');
+}
 
 :root {
   /* La Gazzetta print edition: the signature pink newsprint, black ink */
