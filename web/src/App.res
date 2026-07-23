@@ -492,7 +492,7 @@ let make = () => {
           onDragCancel={() => setDragging(_ => false)}>
           <div className="pairs">
             {
-              // the 🔊 pronounces the prompt word in its own language: Italian
+              // the 🙊 pronounces the prompt word in its own language: Italian
               // when spelling English, English when spelling Italian
               let promptLang = g.direction == "en" ? "en-US" : "it-IT"
               g.pairs
@@ -505,7 +505,7 @@ let make = () => {
                       title={I18n.pronounce(uiLang, p.prompt)}
                       ariaLabel={I18n.pronounce(uiLang, p.prompt)}
                       onClick={_ => Speech.speakWord(p.prompt, promptLang, ~authenticated)}>
-                      {React.string(`🔊`)}
+                      {React.string(`🙊`)}
                     </button>
                     {React.string(p.prompt)}
                   </span>
