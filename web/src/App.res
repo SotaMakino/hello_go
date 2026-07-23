@@ -467,6 +467,17 @@ let make = () => {
             : uniqueColor
         let missCount = g.wrong->Belt.Array.length
         <>
+          <div className="tries">
+            <span className="tries-label"> {React.string(tr.mistakes)} </span>
+            {Belt.Array.makeBy(g.maxMisses, i =>
+              <span
+                key={i->Belt.Int.toString} className={i < missCount ? "try-dot spent" : "try-dot"}
+              />
+            )->React.array}
+            <span className="tries-count">
+              {React.string(`${missCount->Belt.Int.toString} / ${g.maxMisses->Belt.Int.toString}`)}
+            </span>
+          </div>
           <div className="pairs">
             {
               // the 🔊 pronounces the prompt word in its own language: Italian
@@ -569,17 +580,6 @@ let make = () => {
               </div>
             )
             ->React.array}
-          </div>
-          <div className="tries">
-            <span className="tries-label"> {React.string(tr.mistakes)} </span>
-            {Belt.Array.makeBy(g.maxMisses, i =>
-              <span
-                key={i->Belt.Int.toString} className={i < missCount ? "try-dot spent" : "try-dot"}
-              />
-            )->React.array}
-            <span className="tries-count">
-              {React.string(`${missCount->Belt.Int.toString} / ${g.maxMisses->Belt.Int.toString}`)}
-            </span>
           </div>
           {
             // a loss keeps the inline banner (retry + new game); a win gets the
