@@ -57,6 +57,19 @@ let make = (~lang, ~onSuccess: unit => unit) => {
       <button type_="submit" className="primary" disabled=busy>
         {React.string(busy ? tr.pleaseWait : mode == #login ? tr.logIn : tr.createAccount)}
       </button>
+      {mode == #signup
+        ? <p className="auth-terms">
+            {React.string(tr.agreePre)}
+            <a href="/terms.html" target="_blank" rel="noopener noreferrer">
+              {React.string(tr.terms)}
+            </a>
+            {React.string(tr.agreeAnd)}
+            <a href="/privacy.html" target="_blank" rel="noopener noreferrer">
+              {React.string(tr.privacyPolicy)}
+            </a>
+            {React.string(".")}
+          </p>
+        : React.null}
     </form>
     <p>
       {React.string(mode == #login ? tr.noAccountQ : tr.haveAccountQ)}

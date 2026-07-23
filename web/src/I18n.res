@@ -31,6 +31,9 @@ type t = {
   pleaseWait: string,
   noAccountQ: string,
   haveAccountQ: string,
+  agreePre: string,
+  agreeAnd: string,
+  privacyPolicy: string,
 }
 
 let it: t = {
@@ -64,6 +67,9 @@ let it: t = {
   pleaseWait: "Attendere…",
   noAccountQ: "Non hai un account? ",
   haveAccountQ: "Hai già un account? ",
+  agreePre: "Creando un account, accetti i nostri ",
+  agreeAnd: " e l'",
+  privacyPolicy: "Informativa sulla privacy",
 }
 
 let en: t = {
@@ -97,6 +103,9 @@ let en: t = {
   pleaseWait: "Please wait…",
   noAccountQ: "No account? ",
   haveAccountQ: "Already have an account? ",
+  agreePre: "By creating an account, you agree to our ",
+  agreeAnd: " and ",
+  privacyPolicy: "Privacy Policy",
 }
 
 let strings = lang => lang == #it ? it : en

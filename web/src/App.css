@@ -778,6 +778,20 @@
   margin-bottom: 1rem;
 }
 
+/* agreement notice under the Create-account button (sign-up only) */
+.auth .auth-terms {
+  margin: 0.15rem 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(58, 43, 40, 0.72);
+}
+
+.auth .auth-terms a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .password-field {
   position: relative;
   display: flex;
@@ -1117,14 +1131,32 @@
   padding: 1rem;
 }
 
+/* dim and lightly blur the page so the sign-in card stands out */
+.auth-overlay .menu-backdrop {
+  background: rgba(20, 10, 8, 0.5);
+  backdrop-filter: blur(2px);
+}
+
 .auth-modal {
   position: relative;
   z-index: 31;
-  width: min(24rem, 100%);
-  padding: 1.5rem 1.75rem 1.75rem;
+  width: min(23rem, 100%);
+  padding: 1.75rem 1.75rem 2rem;
   background: var(--bg);
-  border: 1px solid var(--text-h);
+  border: 1px solid var(--border);
+  border-radius: 16px;
   box-shadow: var(--shadow);
+}
+
+/* the modal is the card now, so strip the inner form's own box chrome */
+.auth-modal .auth {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
 }
 
 .auth-close {
