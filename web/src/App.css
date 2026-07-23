@@ -450,13 +450,21 @@
 }
 
 @media (max-width: 560px) {
+  /* bound the tiles column to the leftover width so a long word wraps into a
+     second tier instead of overflowing the screen */
   .pairs {
+    grid-template-columns: auto minmax(0, 1fr);
     column-gap: 0.75rem;
   }
 
   .italian {
     font-size: 15px;
     letter-spacing: 0.5px;
+  }
+
+  .english-tiles {
+    flex-wrap: wrap;
+    align-content: center;
   }
 
   .tile {
