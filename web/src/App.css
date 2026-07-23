@@ -29,7 +29,7 @@
   font-weight: 400; /* Ultra ships a single heavy weight; avoid synthetic bold */
   line-height: 0.9; /* tight leading for a compact newspaper masthead */
   letter-spacing: -1px;
-  word-spacing: -0.06em; /* tighten the gap between "Le" and "Cinque" a touch */
+  word-spacing: -0.8rem; /* pull "Le" and "Cinque" closer together */
   color: var(--ink);
   margin: -0.35rem 0 0.05rem;
 }
