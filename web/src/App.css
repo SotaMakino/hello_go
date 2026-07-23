@@ -1033,14 +1033,16 @@
   right: 0;
   z-index: 21;
   min-width: 12rem;
-  padding: 1rem;
+  padding: 1.1rem 1.1rem 1.2rem;
   text-align: center;
   background: var(--bg);
-  border: 1px solid var(--text-h);
+  border: 1px solid var(--border);
+  border-radius: 16px;
   box-shadow: var(--shadow);
 }
 
 .menu-name {
+  font-size: 19px;
   font-weight: 700;
   color: var(--text-h);
   padding-bottom: 0.6rem;
@@ -1073,13 +1075,23 @@
   margin-top: 0.3rem;
 }
 
+/* borderless text actions, side by side */
+.menu-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.menu-logout,
+.menu-delete {
+  font-size: 14px;
+}
+
 .menu-logout {
-  width: 100%;
+  color: var(--text);
 }
 
 .menu-delete {
-  width: 100%;
-  margin-top: 6px;
   color: #cd212a; /* flag red — this is the destructive action */
 }
 

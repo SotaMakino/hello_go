@@ -562,18 +562,20 @@ let make = () => {
                           </span>
                           <span className="menu-label"> {React.string(tr.wordsLearned)} </span>
                         </div>
-                        <button
-                          type_="button"
-                          className="ghost menu-logout"
-                          onClick={_ => handleLogout()->ignore}>
-                          {React.string(tr.logOut)}
-                        </button>
-                        <button
-                          type_="button"
-                          className="ghost menu-delete"
-                          onClick={_ => handleDeleteAccount()->ignore}>
-                          {React.string(tr.deleteAccount)}
-                        </button>
+                        <div className="menu-actions">
+                          <button
+                            type_="button"
+                            className="link menu-logout"
+                            onClick={_ => handleLogout()->ignore}>
+                            {React.string(tr.logOut)}
+                          </button>
+                          <button
+                            type_="button"
+                            className="link menu-delete"
+                            onClick={_ => handleDeleteAccount()->ignore}>
+                            {React.string(tr.deleteAccount)}
+                          </button>
+                        </div>
                       </div>
                     </>}
               </div>
