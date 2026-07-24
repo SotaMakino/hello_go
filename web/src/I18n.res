@@ -22,6 +22,7 @@ type t = {
   lostBanner: array<string>, // one is shown at random when a round is lost
   sayings: array<string>, // Southern Italian proverbs; one shown under the lost banner
   newGame: string,
+  about: string,
   privacy: string,
   terms: string,
   logInTitle: string,
@@ -79,6 +80,7 @@ let it: t = {
     "Chi bella vò parè, guaje e pene adda patè.",
   ],
   newGame: "Nuova partita",
+  about: "Informazioni",
   privacy: "Privacy",
   terms: "Termini",
   logInTitle: "Accedi",
@@ -136,6 +138,7 @@ let en: t = {
     "To look beautiful, you must suffer trouble and pain.",
   ],
   newGame: "New game",
+  about: "About",
   privacy: "Privacy",
   terms: "Terms",
   logInTitle: "Log in",
