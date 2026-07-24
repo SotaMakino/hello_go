@@ -1,0 +1,247 @@
+RESEARCH-HABITS
+Evidence-based methods for successfully forming habits: how automatic
+behaviour is built, what makes it stick, and what to do when it breaks.
+
+Compiled 2026-07-24. Every claim below is tied to a numbered reference in the
+REFERENCES section; numbers in brackets, e.g. [1], point there.
+
+
+====================================================================
+1. WHAT A HABIT ACTUALLY IS: THE CUE-BEHAVIOUR LINK
+====================================================================
+
+A habit is not "doing something a lot". It is a learned association between a
+context cue and a response, so the cue alone triggers the behaviour with little
+thought or motivation. This automaticity is the goal, not the frequency.
+
+* Lally et al. (2010) [1] tracked 96 people adopting one new eating, drinking,
+  or activity behaviour daily for 84 days, measuring automaticity each day.
+  Automaticity rose along an asymptotic curve: fast at first, then flattening.
+  Practical reading: a habit is "formed" when the action feels automatic, not
+  when you have simply repeated it enough times.
+
+* Wood & Runger (2016) [2] review the mechanism: habits are cued by recurring
+  context (time, place, preceding action, mood), and once established they run
+  independently of your current goals or intentions.
+  Practical reading: build the behaviour onto a stable, recurring cue, or it
+  will keep depending on motivation you cannot guarantee.
+
+
+====================================================================
+2. HOW LONG IT TAKES (AND WHY "21 DAYS" IS A MYTH)
+====================================================================
+
+There is no fixed number of days. The popular "21 days" figure has no basis in
+the habit-formation literature.
+
+* In Lally et al. (2010) [1] the median time to reach the automaticity plateau
+  was 66 days, but the range across individuals and behaviours ran from 18 to
+  254 days. Simpler behaviours (drinking water) automated faster than complex
+  ones (doing sit-ups).
+  Practical reading: expect roughly two months for something simple, longer for
+  anything effortful. Judge progress by how automatic it feels, not the calendar.
+
+* The same study found that missing a single opportunity did NOT measurably
+  harm the automaticity curve [1].
+  Practical reading: one slip does not reset your progress. Consistency matters
+  in aggregate, not perfection day to day.
+
+
+====================================================================
+3. THE STRONGEST TOOL: IMPLEMENTATION INTENTIONS
+====================================================================
+
+Deciding IN ADVANCE exactly when, where, and how you will act - an "if-then"
+plan - is one of the best-supported techniques for turning an intention into
+action.
+
+* Gollwitzer & Sheeran (2006) [3] meta-analysed 94 studies (over 8,000 people)
+  and found implementation intentions had a medium-to-large effect (d = 0.65)
+  on goal attainment, on top of merely intending to act.
+  Practical reading: write "When situation X arises, I will do Y." e.g. "After
+  I pour my morning coffee, I will read one page." The plan pre-links a cue to
+  the response, which is exactly the structure of a habit (Section 1).
+
+* They work by delegating control to the cue: the "if" part makes the situation
+  highly accessible, and the "then" part makes the response automatic when the
+  cue appears [3].
+
+
+====================================================================
+4. ANCHOR THE NEW BEHAVIOUR TO AN EXISTING ONE (STACKING)
+====================================================================
+
+A reliable cue is an existing routine. Attaching the new action to something
+you already do every day borrows that routine's stability.
+
+* Judah et al. (2013) [4] tested flossing: participants who planned to floss
+  AFTER brushing (an existing habit) sustained the behaviour better at follow-up
+  than those without such an anchor.
+  Practical reading: pin the new habit to the end of an established one -
+  "after I brush, I floss" - rather than to a vague time of day.
+
+* This is the same cue-response logic as implementation intentions [3], with the
+  "if" deliberately chosen to be an action you never skip.
+
+
+====================================================================
+5. MAKE IT EASY: FRICTION IS DECISIVE
+====================================================================
+
+Small changes to how much effort a behaviour takes have outsized effects,
+because habits run on low deliberation and follow the path of least resistance.
+
+* Rozin et al. (2011) [5] moved cafeteria food items a few inches or changed
+  serving ease; convenience alone shifted consumption substantially without
+  anyone deciding to eat differently.
+  Practical reading: reduce the steps to start the good habit (lay out gym
+  clothes the night before) and add steps to the bad one (unplug the TV,
+  delete the app).
+
+* This complements automaticity: when a behaviour is easy, the cue is enough to
+  trigger it; when it is effortful, it stays dependent on scarce willpower [2].
+
+
+====================================================================
+6. REWARD AND REPETITION: WHAT REINFORCES THE LOOP
+====================================================================
+
+Repetition in a consistent context is the engine, but reward determines whether
+repetition happens long enough for automaticity to take hold.
+
+* Wood & Runger (2016) [2] note that rewards matter most EARLY, to drive the
+  initial repetitions; once the habit is automatic, it persists even when the
+  reward fades. Intrinsically enjoyable behaviours automate more readily.
+  Practical reading: make the early reps rewarding (pick a form of the habit you
+  like; add an immediate small reward), knowing you can drop the prop later.
+
+* Immediate rewards beat delayed ones for habit formation, because the cue-
+  response-reward loop must close quickly to be learned. Woolley & Fishbach
+  (2017) [6] found that enjoyment of the activity itself predicted persistence
+  better than its long-term value did.
+  Practical reading: choose a version of the behaviour you find pleasant NOW,
+  not just one that is good for you later.
+
+
+====================================================================
+7. IDENTITY AND SELF-CONCEPT
+====================================================================
+
+Behaviours tied to how you see yourself are more durable than those pursued as
+isolated tasks.
+
+* Gardner & Lally (2018) [7] and related work argue that habits which align with
+  a valued identity ("I am a runner") receive ongoing support from that self-
+  concept, reducing reliance on moment-to-moment motivation.
+  Practical reading: frame the habit as evidence of who you are becoming, and
+  let small consistent actions accumulate into that identity.
+
+
+====================================================================
+8. WHEN HABITS BREAK - AND HOW TO USE THAT
+====================================================================
+
+Because habits are cue-driven, changing the cues (context) both threatens old
+habits and opens a window for new ones.
+
+* Verplanken & Wood (2006) [8] describe "habit discontinuity": when context
+  changes (a move, a new job, a new routine), existing habits lose their cues
+  and behaviour becomes deliberate again.
+  Practical reading: bad habits are easiest to drop during a life change, when
+  their cues have already been disrupted. Deliberately remove or alter the cues
+  of a habit you want to stop.
+
+* The flip side: a disrupted context also makes it harder to KEEP good habits,
+  so after a move or schedule change, re-establish your cues on purpose rather
+  than assuming the habit will survive on its own [8].
+
+
+====================================================================
+9. PLANNING FOR LAPSES
+====================================================================
+
+Setbacks are normal and, handled well, do not derail habit formation.
+
+* As in Section 2, a single missed occasion did not reset the automaticity
+  curve in Lally et al. (2010) [1]; only sustained gaps did.
+* An "abstinence violation" mindset - treating one lapse as total failure - is
+  itself a strong predictor of relapse (Marlatt & Donovan, 2005) [9].
+  Practical reading: pre-plan a recovery rule ("if I miss a day, I resume the
+  next day, no penalty") so one slip does not become a spiral.
+
+
+====================================================================
+10. A PROTOCOL THAT FOLLOWS FROM THE ABOVE
+====================================================================
+
+1.  Pick ONE small, specific behaviour, in a form you actually enjoy [1][6].
+2.  Choose a stable, recurring cue - ideally an existing daily action to anchor
+    onto [2][4].
+3.  Write an if-then plan: "After/When [cue], I will [behaviour]" [3].
+4.  Cut the friction to start it; add friction to the competing bad habit [5].
+5.  Give the early repetitions an immediate reward; expect to drop it later [2][6].
+6.  Repeat in the SAME context every available opportunity - consistency of cue
+    matters more than intensity [1][2].
+7.  Judge progress by how automatic it feels, not by day count; expect ~2 months
+    or more [1].
+8.  Pre-plan a lapse-recovery rule; resume next day without self-punishment [1][9].
+9.  Frame it as part of who you are becoming [7].
+10. After any big change of routine, deliberately rebuild your cues [8].
+
+
+====================================================================
+REFERENCES
+====================================================================
+
+[1]  Lally, P., van Jaarsveld, C. H. M., Potts, H. W. W., & Wardle, J. (2010).
+     How are habits formed: Modelling habit formation in the real world.
+     European Journal of Social Psychology, 40(6), 998-1009.
+     https://doi.org/10.1002/ejsp.674
+     PDF: https://onlinelibrary.wiley.com/doi/10.1002/ejsp.674
+
+[2]  Wood, W., & Runger, D. (2016). Psychology of habit. Annual Review of
+     Psychology, 67, 289-314.
+     https://doi.org/10.1146/annurev-psych-122414-033417
+
+[3]  Gollwitzer, P. M., & Sheeran, P. (2006). Implementation intentions and
+     goal achievement: A meta-analysis of effects and processes. Advances in
+     Experimental Social Psychology, 38, 69-119.
+     https://doi.org/10.1016/S0065-2601(06)38002-1
+     PDF: https://www.psych.nyu.edu/gollwitzer/06Goll_Sheeran_IntInt.pdf
+
+[4]  Judah, G., Gardner, B., & Aunger, R. (2013). Forming a flossing habit: An
+     exploratory study of the psychological determinants of habit formation.
+     British Journal of Health Psychology, 18(2), 338-353.
+     https://doi.org/10.1111/j.2044-8287.2012.02086.x
+
+[5]  Rozin, P., Scott, S., Dingley, M., Urbanek, J. K., Jiang, H., & Kaltenbach,
+     M. (2011). Nudge to nobesity I: Minor changes in accessibility decrease
+     food intake. Judgment and Decision Making, 6(4), 323-332.
+     PDF: https://journal.sjdm.org/11/11220/jdm11220.pdf
+
+[6]  Woolley, K., & Fishbach, A. (2017). Immediate rewards predict adherence to
+     long-term goals. Personality and Social Psychology Bulletin, 43(2),
+     151-162. https://doi.org/10.1177/0146167216676480
+
+[7]  Gardner, B., & Lally, P. (2018). Modelling habit formation and its
+     determinants. In The Psychology of Habit (pp. 207-229). Springer.
+     https://doi.org/10.1007/978-3-319-97529-0_12
+
+[8]  Verplanken, B., & Wood, W. (2006). Interventions to break and create
+     consumer habits. Journal of Public Policy & Marketing, 25(1), 90-103.
+     https://doi.org/10.1509/jppm.25.1.90
+     PDF: https://dornsife.usc.edu/wendywoodlab/wp-content/uploads/sites/13/2023/02/2006-Verplanken-Wood.pdf
+
+[9]  Marlatt, G. A., & Donovan, D. M. (Eds.). (2005). Relapse Prevention:
+     Maintenance Strategies in the Treatment of Addictive Behaviors (2nd ed.).
+     Guilford Press.
+
+
+====================================================================
+NOTES
+====================================================================
+
+[7] and parts of [2] are behind paywalls; open-access PDFs are given where they
+exist. The "21-day" claim often attributed to Maltz's Psycho-Cybernetics (1960)
+refers to patients adjusting to surgery, not to habit formation, and is not
+supported by [1].
