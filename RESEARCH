@@ -1,0 +1,309 @@
+RESEARCH
+Evidence-based methods for learning a foreign language, with a focus on
+consolidating new vocabulary in long-term memory.
+
+Compiled 2026-07-24. Every claim below is tied to a numbered reference in the
+REFERENCES section; numbers in brackets, e.g. [1], point there.
+
+
+====================================================================
+1. THE HEADLINE FINDING: RETRIEVAL, NOT RE-READING
+====================================================================
+
+Trying to recall a word from memory is what consolidates it. Re-reading or
+re-studying it does almost nothing once you already "know" it.
+
+* Karpicke & Roediger (2008) [1] taught 40 Swahili-English pairs (mashua -
+  boat) under four schedules. Once a word had been recalled correctly, it was
+  either (a) still studied and still tested, (b) still studied but dropped from
+  testing, (c) dropped from study but still tested, or (d) dropped from both.
+  One week later, dropping the STUDY made no difference; dropping the TESTING
+  was devastating. Recall after a week was roughly 80% for the conditions that
+  kept testing, and roughly 35% for those that dropped it.
+  Practical reading: once you can produce a word, keep quizzing it and stop
+  re-reading it.
+
+* The same study found learners were badly calibrated: they predicted all four
+  conditions would come out about equal. Subjective ease is not a reliable
+  signal of learning [1].
+
+* Rowland's (2014) meta-analysis [2] of the testing effect across 159
+  experiments confirms the general benefit (g = 0.50) and shows the size
+  depends on effort: initial tests requiring free/cued RECALL beat recognition
+  (multiple choice), and feedback after the attempt enlarges the effect.
+  Practical reading: prefer "produce the word" over "pick it from four
+  options", and always show the answer afterwards.
+
+* Nakata (2016) [3] applied this specifically to L2 vocabulary and compared
+  retrieval formats directly. Recall formats outperformed recognition formats,
+  and the L2-to-L1 vs L1-to-L2 direction matters for what kind of knowledge you
+  end up with: retrieving the MEANING trains comprehension, retrieving the FORM
+  trains production. They are not interchangeable.
+
+
+====================================================================
+2. SPACING: WHEN TO COME BACK TO A WORD
+====================================================================
+
+* Cepeda, Pashler, Vul, Wixted & Rohrer (2006) [4] synthesised 839 assessments
+  from 317 experiments. Spaced study beats massed study essentially everywhere
+  in verbal recall. The key nuance: the optimal gap between sessions is not
+  fixed - it grows with how long you need to remember the material.
+
+* Cepeda, Vul, Rohrer, Wixted & Pashler (2008) [5] quantified that with 1,354
+  participants, gaps up to 3.5 months and final tests up to 1 year out. As a
+  proportion of the retention interval, the optimal gap SHRINKS as the horizon
+  lengthens: ~20-40% of a 1-week horizon, but only ~5-10% of a 1-year horizon.
+  Practical reading (rules of thumb from their ridgeline):
+    - want it in 1 week   -> review after ~1-2 days
+    - want it in 1 month  -> review after ~1 week
+    - want it in 1 year   -> review after ~3-4 weeks
+  There is no single "correct" interval; there is a correct interval FOR A
+  GIVEN TARGET DATE. Over-long gaps cost far less than over-short ones - the
+  curve falls off gently on the right, steeply on the left.
+
+* Expanding vs equal intervals. The popular claim that intervals must expand
+  (1d, 3d, 7d, 21d...) is weakly supported. Nakata (2015) [6] ran the cleanest
+  L2 test - 128 Japanese university students, 20 English-Japanese pairs,
+  crossing schedule type (expanding vs equal) with amount of spacing (massed /
+  short / medium / long). Expanding spacing won, but the advantage was small
+  and conditional; the AMOUNT of spacing mattered far more than its SHAPE.
+  Practical reading: getting any real spacing in is what counts. Don't
+  over-engineer the curve.
+
+* Spacing survives outside the lab. Nakata, Tada, McLean & Kim (2021) [7] ran
+  distributed retrieval across a whole university semester: cumulative tests
+  (each test re-covering earlier words) beat one-shot tests on delayed
+  post-tests. Practical reading: never retire a word permanently from the
+  quiz pool.
+
+
+====================================================================
+3. DELIBERATE STUDY VS PICKING WORDS UP FROM CONTEXT
+====================================================================
+
+Both work. They work at very different rates, and they build different things.
+
+* Incidental learning (reading, listening, watching) is real but slow. Webb,
+  Uchihara & Yanagisawa (2023) [8] meta-analysed 24 studies (N = 2,771): only
+  9-18% of target words were learned on immediate post-tests and 6-17% on
+  delayed ones, with reading (17%/15%), listening (15%/13%) and
+  reading-while-listening (13%/17%) roughly comparable.
+
+* Intentional, word-focused study is several times more efficient. Webb,
+  Yanagisawa & Uchihara (2020) [9] meta-analysed 100 effect sizes from 22
+  studies of flashcards, word lists, writing and fill-in-the-blanks: 60.1%
+  (meaning-recall) and 58.5% (form-recall) learned immediately. Note the decay,
+  though: 39.4% and 25.1% respectively on DELAYED tests. Deliberate study gets
+  words in fast; only spaced retrieval keeps them there.
+
+* Repetition drives the incidental route. Uchihara, Webb & Yanagisawa (2019)
+  [10] found a medium correlation (r = 0.34) between number of encounters and
+  learning across 45 effect sizes (N = 1,918). More exposures help, but the
+  return per exposure is modest - which is why extensive reading alone is a
+  slow way to build a lexicon.
+
+* Deliberate study is not "shallow". A common objection is that flashcard
+  learning yields inert knowledge. Elgort (2011) [11] tested this with masked
+  repetition priming, form priming and automatic semantic priming on 48
+  deliberately learned pseudowords: the learned items showed a prime lexicality
+  effect and automatic semantic priming, i.e. they had genuinely been
+  integrated into the mental lexicon, not merely memorised as pairs.
+
+* Practical synthesis: use deliberate study to acquire form-meaning links
+  quickly, and extensive input to deepen, contextualise and refresh them.
+
+
+====================================================================
+4. HOW HARD YOU PROCESS A WORD
+====================================================================
+
+* Involvement Load Hypothesis - Laufer & Hulstijn (2001) [12]. Retention scales
+  with a task's involvement load, made of three components:
+    NEED       - do you actually need the word to finish the task?
+    SEARCH     - do you have to look up form or meaning yourself?
+    EVALUATION - do you have to compare the word against alternatives, or
+                 judge whether it fits this specific context?
+  Their experiment compared reading comprehension, reading + fill-in-the-gap,
+  and composition-writing using the target words. Retention was highest for
+  composition, lower for fill-in, lowest for plain reading.
+  Practical reading: WRITING YOUR OWN SENTENCE with a new word beats filling a
+  gap, which beats merely meeting the word in text.
+
+* Mnemonic keyword method - Atkinson & Raugh (1975) [13]. Two stages: link the
+  foreign word to an L1 word that sounds like part of it (the keyword), then
+  form a vivid mental image of the keyword interacting with the translation.
+  With 120 Russian words, keyword learners outscored controls substantially,
+  and the advantage was still there at a 6-week delay.
+  Practical reading: most valuable for stubborn, arbitrary, non-cognate words.
+  It is a fast way IN; retrieval practice is still what keeps it.
+
+
+====================================================================
+5. SLEEP: THE PART YOU DO NOT DO CONSCIOUSLY
+====================================================================
+
+Consolidation of new words is not finished when the study session is. Newly
+learned words start as isolated hippocampal traces and only become part of the
+lexicon - competing with similar-sounding known words during recognition -
+after offline consolidation, mostly during sleep.
+
+* Tamminen, Payne, Stickgold, Wamsley & Gaskell (2010) [14] showed that the
+  emergence of lexical competition for novel words was linked to sleep spindle
+  activity, a marker of hippocampal-neocortical dialogue, while slow-wave sleep
+  duration correlated with better recognition memory.
+
+* Schimke, Angwin, Cheng & Copland (2021) [15] meta-analysed 25 studies (29
+  between-group comparisons, 1,396 participants): sleep beat equivalent
+  wakefulness overall (g = 0.50), with g = 0.57 for recall and g = 0.52 for
+  recognition. The effect on lexical-integration measures was smaller.
+
+Practical reading: study new words in the evening rather than cramming them
+the morning of a test, protect sleep during intensive study periods, and
+expect a word to feel more "settled" the next day than it did at encoding.
+
+
+====================================================================
+6. SESSION DESIGN DETAILS
+====================================================================
+
+* Set size. Nakata & Webb (2016) [16] compared "part" learning (small sets
+  studied to criterion) with "whole" learning (one large set cycled through).
+  Larger sets, which necessarily space each item further apart, produced better
+  delayed retention despite feeling harder during the session. Practical
+  reading: resist the urge to drill a small batch until it feels solid.
+
+* Difficulty should be desirable, not crushing. Across [1], [2] and [6] the
+  pattern is consistent: conditions that feel harder in the moment (longer
+  gaps, recall instead of recognition, bigger sets) produce worse in-session
+  performance and better long-term retention. Judge a method by delayed
+  recall, never by how fluent the session felt.
+
+* Feedback. [2] and [3] both find retrieval works best when the correct answer
+  is shown after the attempt - including after a failed attempt. A failed
+  retrieval followed by feedback is a productive event, not a wasted one.
+
+
+====================================================================
+7. A PROTOCOL THAT FOLLOWS FROM THE ABOVE
+====================================================================
+
+1. Choose target words by frequency/usefulness, then learn them deliberately
+   (paired-associate study or flashcards) - it is the fast route in [9].
+2. Use a hard keyword image for words that resist learning [13].
+3. Switch to retrieval the moment you can recall the word once. Stop
+   re-reading it [1].
+4. Use recall, not multiple choice, and alternate directions: L2->meaning for
+   comprehension, meaning->L2 for production [3].
+5. Always reveal the answer after the attempt, right or wrong [2].
+6. Space reviews at roughly 5-10% of your target retention horizon; err long
+   rather than short [4][5]. Any reasonable expanding schedule is fine [6].
+7. Keep already-learned words in the rotation - cumulative, never retired [7].
+8. Write your own sentence with each new word at least once [12].
+9. Read and listen extensively alongside, for depth and refresh [8][10].
+10. Sleep on it; put new material in an evening session [14][15].
+
+
+====================================================================
+REFERENCES
+====================================================================
+
+[1]  Karpicke, J. D., & Roediger, H. L., III. (2008). The critical importance
+     of retrieval for learning. Science, 319(5865), 966-968.
+     https://doi.org/10.1126/science.1152408
+     PDF: http://psychnet.wustl.edu/memory/wp-content/uploads/2018/04/Karpicke-Roediger-2008_Sci.pdf
+
+[2]  Rowland, C. A. (2014). The effect of testing versus restudy on retention:
+     A meta-analytic review of the testing effect. Psychological Bulletin,
+     140(6), 1432-1463. https://doi.org/10.1037/a0037559
+     PubMed: https://pubmed.ncbi.nlm.nih.gov/25150680/
+
+[3]  Nakata, T. (2016). Effects of retrieval formats on second language
+     vocabulary learning. International Review of Applied Linguistics in
+     Language Teaching (IRAL), 54(3), 257-289.
+     https://doi.org/10.1515/iral-2015-0022
+
+[4]  Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., & Rohrer, D. (2006).
+     Distributed practice in verbal recall tasks: A review and quantitative
+     synthesis. Psychological Bulletin, 132(3), 354-380.
+     https://doi.org/10.1037/0033-2909.132.3.354
+     PDF: https://augmentingcognition.com/assets/Cepeda2006.pdf
+
+[5]  Cepeda, N. J., Vul, E., Rohrer, D., Wixted, J. T., & Pashler, H. (2008).
+     Spacing effects in learning: A temporal ridgeline of optimal retention.
+     Psychological Science, 19(11), 1095-1102.
+     https://doi.org/10.1111/j.1467-9280.2008.02209.x
+     PDF: https://laplab.ucsd.edu/articles/Cepeda%20et%20al%202008_psychsci.pdf
+
+[6]  Nakata, T. (2015). Effects of expanding and equal spacing on second
+     language vocabulary learning: Does gradually increasing spacing increase
+     vocabulary learning? Studies in Second Language Acquisition, 37(4),
+     677-711. https://doi.org/10.1017/S0272263114000825
+
+[7]  Nakata, T., Tada, S., McLean, S., & Kim, Y. A. (2021). Effects of
+     distributed retrieval practice over a semester: Cumulative tests as a way
+     to facilitate second language vocabulary learning. TESOL Quarterly, 55(1),
+     248-270. https://doi.org/10.1002/tesq.596
+
+[8]  Webb, S., Uchihara, T., & Yanagisawa, A. (2023). How effective is second
+     language incidental vocabulary learning? A meta-analysis. Language
+     Teaching, 56(2), 161-180. https://doi.org/10.1017/S0261444822000507
+     ERIC: https://eric.ed.gov/?id=EJ1373102
+
+[9]  Webb, S., Yanagisawa, A., & Uchihara, T. (2020). How effective are
+     intentional vocabulary-learning activities? A meta-analysis. The Modern
+     Language Journal, 104(4), 715-738. https://doi.org/10.1111/modl.12671
+
+[10] Uchihara, T., Webb, S., & Yanagisawa, A. (2019). The effects of repetition
+     on incidental vocabulary learning: A meta-analysis of correlational
+     studies. Language Learning, 69(3), 559-599.
+     https://doi.org/10.1111/lang.12343
+
+[11] Elgort, I. (2011). Deliberate learning and vocabulary acquisition in a
+     second language. Language Learning, 61(2), 367-413.
+     https://doi.org/10.1111/j.1467-9922.2010.00613.x
+     PDF: https://www.lextutor.ca/freq/lists_download/elgort_2011.pdf
+
+[12] Laufer, B., & Hulstijn, J. (2001). Incidental vocabulary acquisition in a
+     second language: The construct of task-induced involvement. Applied
+     Linguistics, 22(1), 1-26. https://doi.org/10.1093/applin/22.1.1
+     Companion empirical test: Hulstijn, J. H., & Laufer, B. (2001). Some
+     empirical evidence for the Involvement Load Hypothesis in vocabulary
+     acquisition. Language Learning, 51(3), 539-558.
+     https://doi.org/10.1111/0023-8333.00164
+
+[13] Atkinson, R. C., & Raugh, M. R. (1975). An application of the mnemonic
+     keyword method to the acquisition of a Russian vocabulary. Journal of
+     Experimental Psychology: Human Learning and Memory, 1(2), 126-133.
+     https://doi.org/10.1037/0278-7393.1.2.126
+     Note: 1975 is the year JEP split into sections, so this article is cited
+     in the literature both as 1(2) (the new section's own numbering, which is
+     what the DOI uses) and as 104(2) (the continued parent-journal numbering,
+     which is what ERIC records). Pages 126-133 are the same either way.
+     ERIC: https://eric.ed.gov/?id=EJ113586
+
+[14] Tamminen, J., Payne, J. D., Stickgold, R., Wamsley, E. J., & Gaskell,
+     M. G. (2010). Sleep spindle activity is associated with the integration of
+     new memories and existing knowledge. The Journal of Neuroscience, 30(43),
+     14356-14360. https://doi.org/10.1523/JNEUROSCI.3028-10.2010
+     Open access: https://pmc.ncbi.nlm.nih.gov/articles/PMC2989532/
+
+[15] Schimke, E. A. E., Angwin, A. J., Cheng, B. B. Y., & Copland, D. A.
+     (2021). The effect of sleep on novel word learning in healthy adults: A
+     systematic review and meta-analysis. Psychonomic Bulletin & Review, 28(6),
+     1811-1838. https://doi.org/10.3758/s13423-021-01980-3
+
+[16] Nakata, T., & Webb, S. (2016). Does studying vocabulary in smaller sets
+     increase learning? The effects of part and whole learning on second
+     language vocabulary acquisition. Studies in Second Language Acquisition,
+     38(3), 523-552. https://doi.org/10.1017/S0272263115000236
+
+
+====================================================================
+NOTE ON SOURCING
+====================================================================
+Volume/issue/page data and the reported effect sizes above were taken from
+publisher and index pages (Science, APA PsycNet, Wiley, Cambridge Core,
+De Gruyter, Springer, ERIC, PubMed) rather than from memory. Where a DOI is
+listed the DOI is authoritative. Full texts behind [2], [3], [6], [7], [8],
+[9], [10] and [16] are paywalled; open-access PDFs are given where they exist.
