@@ -22,7 +22,7 @@ func setupDB(t *testing.T) *sql.DB {
 		t.Skipf("postgres unavailable: %v", err)
 	}
 	t.Cleanup(func() { db.Close() })
-	if _, err := db.Exec("TRUNCATE games, guesses, accounts, sessions"); err != nil {
+	if _, err := db.Exec("TRUNCATE games, guesses, accounts, sessions, word_reviews"); err != nil {
 		t.Fatal(err)
 	}
 	return db

@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"example.com/le-cinque/middleware"
 )
@@ -19,6 +20,27 @@ const (
 	// a lost round's words return once this many later rounds have been played
 	ReviewGap = 3
 )
+
+// reviewDays is the gap before a retrieved word comes back, in days, indexed by
+// how many times in a row the player has produced it. Gradually widening gaps
+// beat equal ones only slightly, and the amount of spacing matters far more than
+// the shape of the schedule, so the ladder stays coarse on purpose.
+var reviewDays = []int{1, 3, 7, 21, 60}
+
+// now is the clock scheduling reads. Tests replace it to travel in time.
+var now = time.Now
+
+// dueAfter returns when a word retrieved for the streak-th time running is due.
+func dueAfter(at time.Time, streak int) time.Time {
+	i := streak - 1
+	if i < 0 {
+		i = 0
+	}
+	if i >= len(reviewDays) {
+		i = len(reviewDays) - 1
+	}
+	return at.AddDate(0, 0, reviewDays[i])
+}
 
 type Games struct {
 	DB *sql.DB
@@ -117,6 +139,72 @@ func (h *Games) history(user string) (map[string]outcome, int, error) {
 		}
 	}
 	return last, round, rows.Err()
+}
+
+// review is a player's record for one word: when it is due again, when they
+// last saw it, and how many times running they have retrieved it.
+type review struct {
+	dueAt    time.Time
+	lastSeen time.Time
+	streak   int
+}
+
+func (h *Games) reviews(user string) (map[string]review, error) {
+	rows, err := h.DB.Query(
+		"SELECT word, due_at, last_seen, streak FROM word_reviews WHERE username = $1", user)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]review{}
+	for rows.Next() {
+		var w string
+		var r review
+		if err := rows.Scan(&w, &r.dueAt, &r.lastSeen, &r.streak); err != nil {
+			return nil, err
+		}
+		out[w] = r
+	}
+	return out, rows.Err()
+}
+
+// recordReviews writes one row per word of a finished round. Only a word the
+// player actually produced advances its ladder: a correct placement opens that
+// letter across every word on the board, so a word can finish fully revealed
+// without ever having been recalled. Those reset to a streak of zero and come
+// due again at the next session.
+func (h *Games) recordReviews(user string, g *game, attempts []attempt) error {
+	revs, err := h.reviews(user)
+	if err != nil {
+		return err
+	}
+	retrieved := map[int]bool{}
+	for _, a := range attempts {
+		// Guess turns away a placement on an already revealed tile, so every
+		// correct attempt is a letter the player produced for that word
+		if g.correct(a) {
+			retrieved[a.word] = true
+		}
+	}
+	at := now()
+	for wi, w := range g.words {
+		streak, due := 0, at
+		if retrieved[wi] {
+			streak = revs[w].streak + 1
+			due = dueAfter(at, streak)
+		}
+		if _, err := h.DB.Exec(
+			`INSERT INTO word_reviews (username, word, due_at, last_seen, streak)
+			 VALUES ($1, $2, $3, $4, $5)
+			 ON CONFLICT (username, word) DO UPDATE SET
+			   due_at = EXCLUDED.due_at,
+			   last_seen = EXCLUDED.last_seen,
+			   streak = EXCLUDED.streak`,
+			user, w, due, at, streak); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // nextWords picks a round's words. Priority:
@@ -312,15 +400,15 @@ func (h *Games) writeState(w http.ResponseWriter, code int, g *game) {
 }
 
 // Me returns the signed-in user's name and how many distinct words they have
-// learned — a word counts as learned once it appears in any won round.
+// learned — a word counts once the player has retrieved it themselves, so the
+// ones a round revealed for free through another word's letters do not inflate
+// the tally.
 func (h *Games) Me(w http.ResponseWriter, r *http.Request) {
 	user := middleware.Username(r)
 	authed := middleware.Authenticated(r)
 	var learned int
-	err := h.DB.QueryRow(`SELECT COUNT(DISTINCT w) FROM (
-		SELECT unnest(string_to_array(word, ',')) AS w
-		FROM games WHERE username = $1 AND status = 'won'
-	) t`, user).Scan(&learned)
+	err := h.DB.QueryRow(
+		"SELECT COUNT(*) FROM word_reviews WHERE username = $1 AND streak > 0", user).Scan(&learned)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "query failed")
 		return
@@ -540,6 +628,12 @@ func (h *Games) Guess(w http.ResponseWriter, r *http.Request) {
 	if g.status != "playing" {
 		if _, err := h.DB.Exec("UPDATE games SET status = $1 WHERE id = $2", g.status, g.id); err != nil {
 			writeError(w, http.StatusInternalServerError, "could not update game")
+			return
+		}
+		// schedule each word of the round on its own, by what the player
+		// actually retrieved rather than by how the round as a whole ended
+		if err := h.recordReviews(user, g, append(attempts, a)); err != nil {
+			writeError(w, http.StatusInternalServerError, "could not record the round")
 			return
 		}
 	}

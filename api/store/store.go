@@ -36,5 +36,15 @@ func Open(url string) (*sql.DB, error) {
 		game_id BIGINT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
 		guess TEXT NOT NULL
 	)`)
+	// one row per word the player has met, so review scheduling is per word and
+	// measured in days rather than in rounds played
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS word_reviews (
+		username TEXT NOT NULL,
+		word TEXT NOT NULL,
+		due_at TIMESTAMPTZ NOT NULL,
+		last_seen TIMESTAMPTZ NOT NULL,
+		streak INT NOT NULL DEFAULT 0,
+		PRIMARY KEY (username, word)
+	)`)
 	return db, err
 }

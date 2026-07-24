@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"example.com/le-cinque/middleware"
 	"example.com/le-cinque/store"
@@ -25,10 +26,49 @@ func setupDB(t *testing.T) *sql.DB {
 		t.Skipf("postgres unavailable: %v", err)
 	}
 	t.Cleanup(func() { db.Close() })
-	if _, err := db.Exec("TRUNCATE games, guesses, accounts, sessions"); err != nil {
+	if _, err := db.Exec("TRUNCATE games, guesses, accounts, sessions, word_reviews"); err != nil {
 		t.Fatal(err)
 	}
 	return db
+}
+
+// freezeClock pins the scheduling clock so tests can travel in time instead of
+// waiting for real days to pass.
+func freezeClock(t *testing.T, at time.Time) {
+	t.Helper()
+	prev := now
+	now = func() time.Time { return at }
+	t.Cleanup(func() { now = prev })
+}
+
+// setReview writes a word's review record directly, standing in for rounds
+// already played.
+func setReview(t *testing.T, h *Games, user, word string, dueAt, lastSeen time.Time, streak int) {
+	t.Helper()
+	if _, err := h.DB.Exec(
+		`INSERT INTO word_reviews (username, word, due_at, last_seen, streak)
+		 VALUES ($1, $2, $3, $4, $5)
+		 ON CONFLICT (username, word) DO UPDATE SET
+		   due_at = EXCLUDED.due_at, last_seen = EXCLUDED.last_seen, streak = EXCLUDED.streak`,
+		user, word, dueAt, lastSeen, streak); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// readReview returns one word's review record.
+func readReview(t *testing.T, h *Games, user, word string) (review, bool) {
+	t.Helper()
+	var r review
+	err := h.DB.QueryRow(
+		"SELECT due_at, last_seen, streak FROM word_reviews WHERE username = $1 AND word = $2",
+		user, word).Scan(&r.dueAt, &r.lastSeen, &r.streak)
+	if err == sql.ErrNoRows {
+		return review{}, false
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return r, true
 }
 
 func setupGames(t *testing.T) *Games {
@@ -498,12 +538,15 @@ func TestReset_AfterGameOver(t *testing.T) {
 	}
 }
 
-func TestMe_CountsDistinctLearnedWords(t *testing.T) {
+func TestMe_CountsRetrievedWordsOnly(t *testing.T) {
 	h := setupGames(t)
-	// two won rounds share "TRENO", plus a lost round that must not count
-	finishRound(t, h, "ann", []string{"TRENO", "BANCA", "MUSICA", "LEONE", "PARCO"}, "won")
-	finishRound(t, h, "ann", []string{"TRENO", "GATTO", "CANE", "SOLE", "LUNA"}, "won")
-	finishRound(t, h, "ann", []string{"MARE", "FIUME", "LAGO", "CIELO", "VENTO"}, "lost")
+	at := time.Now()
+	// three words the player produced themselves, plus one that a round revealed
+	// through another word's letters — the latter must not count as learned
+	setReview(t, h, "ann", "TRENO", at, at, 1)
+	setReview(t, h, "ann", "BANCA", at, at, 3)
+	setReview(t, h, "ann", "MUSICA", at, at, 2)
+	setReview(t, h, "ann", "LEONE", at, at, 0)
 
 	rec := httptest.NewRecorder()
 	h.Me(rec, asUser("ann", "GET", "/me", ""))
@@ -518,9 +561,93 @@ func TestMe_CountsDistinctLearnedWords(t *testing.T) {
 	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}
-	// 9 distinct words won (TRENO counted once), lost round excluded
-	if body.Username != "ann" || body.Learned != 9 {
-		t.Errorf("expected ann with 9 learned, got %+v", body)
+	if body.Username != "ann" || body.Learned != 3 {
+		t.Errorf("expected ann with 3 learned, got %+v", body)
+	}
+}
+
+func TestRecordReviews_LeakedWordEarnsNothing(t *testing.T) {
+	h := setupGames(t)
+	at := time.Date(2026, 7, 24, 12, 0, 0, 0, time.UTC)
+	freezeClock(t, at)
+
+	// LEMON and MELON are anagrams, so spelling LEMON reveals MELON outright:
+	// solveRound never places a letter on the second word
+	round := []string{"LIMONE", "MELONE", "TRENO", "BANCA", "PARCO"}
+	startRound(t, h, "ann", round)
+	if s := decodeState(t, solveRound(h, "ann", round)); s.Status != "won" {
+		t.Fatalf("expected the round won, got %+v", s)
+	}
+
+	// the four words the player spelled advance to a streak of one, due tomorrow
+	for _, w := range []string{"LIMONE", "TRENO", "BANCA", "PARCO"} {
+		r, ok := readReview(t, h, "ann", w)
+		if !ok {
+			t.Fatalf("%q has no review record", w)
+		}
+		if r.streak != 1 {
+			t.Errorf("%q: expected streak 1, got %d", w, r.streak)
+		}
+		if !r.dueAt.Equal(at.AddDate(0, 0, reviewDays[0])) {
+			t.Errorf("%q: expected due in %d day(s), got %v", w, reviewDays[0], r.dueAt)
+		}
+	}
+	// MELONE was never recalled — it only appeared. No credit, due again next
+	// session rather than in a day.
+	r, ok := readReview(t, h, "ann", "MELONE")
+	if !ok {
+		t.Fatal("MELONE has no review record")
+	}
+	if r.streak != 0 {
+		t.Errorf("MELONE was revealed by LIMONE's letters, expected streak 0, got %d", r.streak)
+	}
+	if r.dueAt.After(at) {
+		t.Errorf("expected MELONE due immediately, got %v", r.dueAt)
+	}
+}
+
+func TestRecordReviews_LadderExpandsAndResets(t *testing.T) {
+	h := setupGames(t)
+	at := time.Date(2026, 7, 24, 12, 0, 0, 0, time.UTC)
+	freezeClock(t, at)
+
+	// a word already retrieved twice running steps to the third rung
+	setReview(t, h, "ann", "TRENO", at, at.AddDate(0, 0, -3), 2)
+	startRound(t, h, "ann", testRound)
+	solveRound(h, "ann", testRound)
+
+	r, _ := readReview(t, h, "ann", "TRENO")
+	if r.streak != 3 {
+		t.Fatalf("expected streak 3, got %d", r.streak)
+	}
+	if !r.dueAt.Equal(at.AddDate(0, 0, reviewDays[2])) {
+		t.Errorf("expected due in %d days, got %v", reviewDays[2], r.dueAt)
+	}
+
+	// losing the round without touching a word drops it back to the bottom
+	later := at.AddDate(0, 0, 7)
+	freezeClock(t, later)
+	startRound(t, h, "ann", testRound)
+	for i := 0; i < MaxMisses; i++ {
+		place(h, "ann", "Z", 0, i)
+	}
+	r, _ = readReview(t, h, "ann", "TRENO")
+	if r.streak != 0 {
+		t.Errorf("expected the streak reset after a lost round, got %d", r.streak)
+	}
+}
+
+func TestDueAfter_ClampsToTheLastRung(t *testing.T) {
+	at := time.Date(2026, 7, 24, 12, 0, 0, 0, time.UTC)
+	last := reviewDays[len(reviewDays)-1]
+	for _, streak := range []int{len(reviewDays), len(reviewDays) + 5, 99} {
+		if got := dueAfter(at, streak); !got.Equal(at.AddDate(0, 0, last)) {
+			t.Errorf("streak %d: expected the ladder capped at %d days, got %v", streak, last, got)
+		}
+	}
+	// a zero or negative streak still schedules a review rather than panicking
+	if got := dueAfter(at, 0); !got.Equal(at.AddDate(0, 0, reviewDays[0])) {
+		t.Errorf("streak 0: expected %d day(s), got %v", reviewDays[0], got)
 	}
 }
 
