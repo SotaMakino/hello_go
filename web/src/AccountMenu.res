@@ -62,8 +62,7 @@ let make = (
                   let i = col * 7 + row
                   switch Belt.Array.get(activity, i) {
                   | Some(c) =>
-                    let lvl =
-                      c <= 0 ? "0" : c <= 2 ? "1" : c <= 5 ? "2" : c <= 9 ? "3" : "4"
+                    let lvl = c <= 0 ? "0" : c <= 2 ? "1" : c <= 5 ? "2" : c <= 9 ? "3" : "4"
                     // "3 words · 24 Jul 2026" — the day's tally and date
                     let date = Js.Date.fromFloat(startMs +. i->Belt.Int.toFloat *. 86400000.)
                     let dateStr = date->toLocaleDate(
@@ -78,8 +77,7 @@ let make = (
                     let word = c == 1 ? tr.dayWord : tr.dayWords
                     let title = c->Belt.Int.toString ++ " " ++ word ++ " · " ++ dateStr
                     <div key={row->Belt.Int.toString} className={"cal-day l" ++ lvl} title />
-                  | None =>
-                    <div key={row->Belt.Int.toString} className="cal-day cal-empty" />
+                  | None => <div key={row->Belt.Int.toString} className="cal-day cal-empty" />
                   }
                 })->React.array}
               </div>
